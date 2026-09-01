@@ -1,4 +1,4 @@
-# 🤖 [Your Project Name]
+# 🤖 Sipnip's Debut Hackathon
 > AI-powered wallet agent built on Sui Network — MUBA Blockchain Hackathon
 
 ## What It Does
