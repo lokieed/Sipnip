@@ -9,10 +9,10 @@ knowledge needed.
 ## Team
 | Person | Role | Folder |
 |--------|------|--------|
-| [Nathan Chua Jia Shen] | UI/UX + Frontend | /frontend |
-| [Name] | AI Agent | /agent |
-| [Name] | Sui Blockchain | /contracts |
-| [Yap Chung Chuen] | Integration + Demo | /demo |
+| Nathan Chua Jia Shen | UI/UX + Frontend | /frontend |
+| Norman  | AI Agent | /agent |
+| Nicole Chua Jia Xing | Sui Blockchain | /contracts |
+| Yap Chung Chuen | Integration + Demo | /demo |
 
 ## Tech Stack
 - Frontend: React
