@@ -10,7 +10,7 @@ knowledge needed.
 | Person | Role | Folder |
 |--------|------|--------|
 | Nathan Chua Jia Shen | UI/UX + Frontend | /frontend |
-| Norman  | AI Agent | /agent |
+| Norman Lim Yi Hau  | AI Agent | /agent |
 | Nicole Chua Jia Xing | Sui Blockchain | /contracts |
 | Yap Chung Chuen | Integration + Demo | /demo |
 
