@@ -16,6 +16,6 @@ knowledge needed.
 
 ## Tech Stack
 - Frontend: React
-- AI: Claude API (Anthropic)
+- AI: Google API
 - Blockchain: Sui Network
-- Storage: Walrus
+- Storage: 
