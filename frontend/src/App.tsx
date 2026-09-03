@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { executeActionOnSui, fetchWalletBalance, parseIntentWithAI } from './api';
 import { Chat } from './components/Chat';
 import { Dashboard } from './components/Dashboard';
@@ -135,35 +136,42 @@ export default function App() {
     setScreen('dashboard');
   };
 
-  // ---- Render ----
-  if (screen === 'landing') return <Landing onConnect={connectWallet} connecting={connecting} />;
-
-  if (screen === 'dashboard')
-    return (
-      <Dashboard
-        wallet={wallet}
-        activity={activity}
-        onOpenChat={() => setScreen('chat')}
-        balanceLoading={balanceLoading}
-      />
-    );
-
-  if (screen === 'chat')
-    return (
-      <Chat
-        messages={messages}
-        onSend={handleSend}
-        onReviewAction={handleReviewAction}
-        onBack={() => setScreen('dashboard')}
-        aiThinking={aiThinking}
-      />
-    );
-
-  if (screen === 'review' && activeAction)
-    return <Review action={activeAction} onConfirm={handleConfirm} onCancel={() => setScreen('chat')} />;
-
-  if (screen === 'result' && activeAction)
-    return <TxResult action={activeAction} onDone={backToDashboard} onRetry={handleConfirm} />;
-
-  return null;
+  // ---- Render with fluid screen transitions ----
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={screen}
+        initial={{ opacity: 0, y: 8, scale: 0.995 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -6, scale: 0.995 }}
+        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        className="w-full min-h-screen"
+      >
+        {screen === 'landing' && <Landing onConnect={connectWallet} connecting={connecting} />}
+        {screen === 'dashboard' && (
+          <Dashboard
+            wallet={wallet}
+            activity={activity}
+            onOpenChat={() => setScreen('chat')}
+            balanceLoading={balanceLoading}
+          />
+        )}
+        {screen === 'chat' && (
+          <Chat
+            messages={messages}
+            onSend={handleSend}
+            onReviewAction={handleReviewAction}
+            onBack={() => setScreen('dashboard')}
+            aiThinking={aiThinking}
+          />
+        )}
+        {screen === 'review' && activeAction && (
+          <Review action={activeAction} onConfirm={handleConfirm} onCancel={() => setScreen('chat')} />
+        )}
+        {screen === 'result' && activeAction && (
+          <TxResult action={activeAction} onDone={backToDashboard} onRetry={handleConfirm} />
+        )}
+      </motion.div>
+    </AnimatePresence>
+  );
 }
