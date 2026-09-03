@@ -1,7 +1,8 @@
+import { motion } from 'framer-motion';
 import type { ReactNode } from 'react';
 
 // ============================================================
-// Button
+// Button (with Morphing Spring Physics & Hover/Tap feedback)
 // ============================================================
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
@@ -21,7 +22,7 @@ export function Button({
   icon?: ReactNode;
 }) {
   const base =
-    'inline-flex items-center justify-center gap-2 font-medium text-sm rounded-[var(--radius-md)] px-4 py-2.5 transition-all duration-150 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100';
+    'inline-flex items-center justify-center gap-2 font-medium text-sm rounded-[var(--radius-md)] px-4 py-2.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer select-none';
 
   const variants: Record<ButtonVariant, string> = {
     primary:
@@ -35,37 +36,50 @@ export function Button({
   };
 
   return (
-    <button
+    <motion.button
+      whileHover={disabled ? undefined : { scale: 1.012 }}
+      whileTap={disabled ? undefined : { scale: 0.97 }}
+      transition={{ type: 'spring', stiffness: 450, damping: 28 }}
       onClick={onClick}
       disabled={disabled}
       className={`${base} ${variants[variant]} ${fullWidth ? 'w-full' : ''}`}
     >
       {icon}
       {children}
-    </button>
+    </motion.button>
   );
 }
 
 // ============================================================
-// Card
+// Card (with PowerPoint-style Shared Layout Morphing)
 // ============================================================
 export function Card({
   children,
   className = '',
   glow,
+  layoutId,
 }: {
   children: ReactNode;
   className?: string;
   glow?: 'ai' | 'sui';
+  layoutId?: string;
 }) {
-  const glowStyle = glow === 'ai' ? { boxShadow: 'var(--shadow-glow-ai)' } : glow === 'sui' ? { boxShadow: 'var(--shadow-glow-sui)' } : {};
+  const glowStyle =
+    glow === 'ai'
+      ? { boxShadow: 'var(--shadow-glow-ai)' }
+      : glow === 'sui'
+      ? { boxShadow: 'var(--shadow-glow-sui)' }
+      : {};
+
   return (
-    <div
+    <motion.div
+      layoutId={layoutId}
+      transition={{ type: 'spring', stiffness: 350, damping: 30 }}
       className={`bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-lg)] ${className}`}
       style={glowStyle}
     >
       {children}
-    </div>
+    </motion.div>
   );
 }
 

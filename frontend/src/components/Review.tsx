@@ -27,7 +27,7 @@ export function Review({
           <span className="text-sm font-medium text-[var(--color-text-secondary)]">Review before confirming</span>
         </div>
 
-        <Card className="p-6 mb-6" glow="sui">
+        <Card layoutId="action-review-card" className="p-6 mb-6" glow="sui">
           <div className="text-center mb-6">
             <div className="text-xs text-[var(--color-text-tertiary)] mb-1">Amount</div>
             <div className="text-4xl font-bold font-mono">{action.amount} <span className="text-2xl text-[var(--color-text-tertiary)]">SUI</span></div>

@@ -191,7 +191,7 @@ function ActionCard({
   onReview: () => void;
 }) {
   return (
-    <Card className="p-3.5 sm:p-4 w-full transition-all" glow="ai">
+    <Card layoutId="action-review-card" className="p-3.5 sm:p-4 w-full transition-all" glow="ai">
       <div className="flex items-center justify-between mb-2.5">
         <Badge tone="ai">Proposed Action</Badge>
       </div>
