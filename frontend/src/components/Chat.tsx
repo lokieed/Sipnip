@@ -38,7 +38,11 @@ export function Chat({
   };
 
   return (
-    <div className="h-[100dvh] flex flex-col max-w-2xl mx-auto w-full">
+    <motion.div
+      layoutId="chat-morph-shell"
+      transition={{ type: 'spring', stiffness: 350, damping: 32 }}
+      className="h-[100dvh] flex flex-col max-w-2xl mx-auto w-full bg-[var(--color-bg)] rounded-[var(--radius-lg)] overflow-hidden"
+    >
       {/* Sticky Header with responsive padding and blur */}
       <header className="sticky top-0 z-10 flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[var(--color-border)] backdrop-blur-md bg-[var(--color-bg)]/80 transition-colors">
         <div className="flex items-center gap-3">
@@ -173,7 +177,7 @@ export function Chat({
           </button>
         </form>
       </footer>
-    </div>
+    </motion.div>
   );
 }
 

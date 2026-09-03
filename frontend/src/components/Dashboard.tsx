@@ -46,8 +46,12 @@ export function Dashboard({
           </div>
         </Card>
 
-        {/* AI agent status */}
-        <Card className="p-4 mb-6 flex items-center justify-between">
+        {/* AI agent status — morphs into Chat window */}
+        <Card
+          layoutId="chat-morph-shell"
+          className="p-4 mb-6 flex items-center justify-between cursor-pointer hover:border-[var(--color-border-hover)] transition-all"
+          onClick={onOpenChat}
+        >
           <div className="flex items-center gap-2.5">
             <StatusDot tone="success" />
             <span className="text-sm text-[var(--color-text-secondary)]">AI agent ready</span>

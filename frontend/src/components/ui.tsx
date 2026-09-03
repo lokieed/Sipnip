@@ -58,11 +58,13 @@ export function Card({
   className = '',
   glow,
   layoutId,
+  onClick,
 }: {
   children: ReactNode;
   className?: string;
   glow?: 'ai' | 'sui';
   layoutId?: string;
+  onClick?: () => void;
 }) {
   const glowStyle =
     glow === 'ai'
@@ -74,6 +76,7 @@ export function Card({
   return (
     <motion.div
       layoutId={layoutId}
+      onClick={onClick}
       transition={{ type: 'spring', stiffness: 350, damping: 30 }}
       className={`bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-lg)] ${className}`}
       style={glowStyle}
