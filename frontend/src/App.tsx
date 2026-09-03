@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { executeActionOnSui, fetchWalletBalance, parseIntentWithAI } from './api';
 import { Chat } from './components/Chat';
 import { Dashboard } from './components/Dashboard';
@@ -11,23 +11,41 @@ import type { ActivityItem, ChatMessage, ProposedAction, WalletState } from './t
 type Screen = 'landing' | 'dashboard' | 'chat' | 'review' | 'result';
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>('landing');
-  const [wallet, setWallet] = useState<WalletState>(MOCK_WALLET);
-  const [activity, setActivity] = useState<ActivityItem[]>(MOCK_ACTIVITY);
+  const [wallet, setWallet] = useState<WalletState>(() => {
+    const saved = localStorage.getItem('sipnip_wallet');
+    return saved ? JSON.parse(saved) : MOCK_WALLET;
+  });
+
+  const [activity, setActivity] = useState<ActivityItem[]>(() => {
+    const saved = localStorage.getItem('sipnip_activity');
+    return saved ? JSON.parse(saved) : MOCK_ACTIVITY;
+  });
+
+  const [screen, setScreen] = useState<Screen>(() => {
+    return wallet.connected ? 'dashboard' : 'landing';
+  });
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [aiThinking, setAiThinking] = useState(false);
   const [activeAction, setActiveAction] = useState<ProposedAction | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [balanceLoading, setBalanceLoading] = useState(false);
 
-  // ---- Wallet connect (mock) ----
-  // Real wallet connect involves a round trip to the wallet extension, so
-  // even the mock version should show a believable brief loading state
-  // rather than flipping instantly.
+  // Sync wallet state to localStorage so refresh keeps the updated balance
+  useEffect(() => {
+    localStorage.setItem('sipnip_wallet', JSON.stringify(wallet));
+  }, [wallet]);
+
+  // Sync activity history to localStorage
+  useEffect(() => {
+    localStorage.setItem('sipnip_activity', JSON.stringify(activity));
+  }, [activity]);
+
+  // ---- Wallet connect ----
   const connectWallet = () => {
     setConnecting(true);
     setTimeout(() => {
-      setWallet({ ...MOCK_WALLET, connected: true });
+      setWallet((prev) => ({ ...prev, connected: true }));
       setConnecting(false);
       setScreen('dashboard');
       loadRealBalance();

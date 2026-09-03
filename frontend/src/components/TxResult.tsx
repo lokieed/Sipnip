@@ -44,9 +44,14 @@ export function TxResult({
           {action.amount} SUI sent to {action.recipient}
         </div>
 
-        <Card className="p-4 w-full max-w-xs mb-6">
-          <div className="text-xs text-[var(--color-text-tertiary)] mb-1">Transaction</div>
-          <div className="text-sm font-mono">{action.txDigest}</div>
+        <Card className="p-4 w-full max-w-xs mb-6 overflow-hidden">
+          <div className="flex items-center justify-between text-xs text-[var(--color-text-tertiary)] mb-1.5">
+            <span>Transaction Digest</span>
+            <span className="text-[10px] text-[var(--color-sui)] font-mono">Sui Testnet</span>
+          </div>
+          <div className="text-xs font-mono break-all leading-relaxed bg-[var(--color-surface-2)]/60 p-2.5 rounded border border-[var(--color-border)]/50 select-all">
+            {action.txDigest}
+          </div>
         </Card>
 
         <div className="flex flex-col gap-2.5 w-full max-w-xs">
