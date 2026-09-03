@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { fetchWalletBalance, parseIntentWithAI } from './api';
+import { executeActionOnSui, fetchWalletBalance, parseIntentWithAI } from './api';
 import { Chat } from './components/Chat';
 import { Dashboard } from './components/Dashboard';
 import { Landing } from './components/Landing';
 import { Review } from './components/Review';
 import { TxResult } from './components/TxResult';
-import { fakeExecuteOnSui, MOCK_ACTIVITY, MOCK_WALLET } from './mock';
+import { MOCK_ACTIVITY, MOCK_WALLET } from './mock';
 import type { ActivityItem, ChatMessage, ProposedAction, WalletState } from './types';
 
 type Screen = 'landing' | 'dashboard' | 'chat' | 'review' | 'result';
@@ -97,7 +97,7 @@ export default function App() {
     setActiveAction({ ...activeAction, status: 'processing' });
     setScreen('result');
 
-    const result = await fakeExecuteOnSui();
+    const result = await executeActionOnSui(activeAction);
 
     if (result.success) {
       const updated: ProposedAction = { ...activeAction, status: 'success', txDigest: result.digest };

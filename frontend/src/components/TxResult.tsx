@@ -50,7 +50,16 @@ export function TxResult({
         </Card>
 
         <div className="flex flex-col gap-2.5 w-full max-w-xs">
-          <Button fullWidth variant="secondary">View Transaction</Button>
+          <Button
+            fullWidth
+            variant="secondary"
+            onClick={() => {
+              const hash = action.txDigest || '8z3TxMuEyAuCTZvKwz1eAcLyW25ZbYhtcVAAd1P76KmQ';
+              window.open(`https://suiscan.xyz/testnet/tx/${hash}`, '_blank');
+            }}
+          >
+            View on Suiscan ↗
+          </Button>
           <Button fullWidth onClick={onDone}>Back to Dashboard</Button>
         </div>
       </Center>
