@@ -1,19 +1,17 @@
-# 🤖 AI Wallet Agent — Integration Contract
+# 🤖 Sipnip AI Wallet Agent — Integration Contract (v3.0)
 
 > **Author:** Member 2 (AI Agent / NLU Lead)  
-> **Audience:** Member 1 (Frontend), Member 3 (Sui Blockchain), Member 4 (Integration/Backend)
+> **Audience:** Member 1 (Frontend), Member 3 (Sui Blockchain / PTB Lead), Member 4 (Integration/Backend)
 
 ---
 
 ## 1. What This AI Module Does
 
-This module translates raw, unstructured user chat messages into **strongly-typed JSON action objects**. 
-
-It handles:
-* Intent recognition (Transfer, Balance check, Transaction history).
-* Entity extraction (Recipient names/addresses, token amounts, token tickers).
-* Guardrails (Flags off-topic or ambiguous requests as `unknown`).
-* **Zero Autonomous Execution**: The AI *only proposes structured actions*. It never holds private keys and never directly executes transactions on Sui.
+This module translates natural language chat messages into **strongly-typed JSON action objects** with:
+* **Multi-turn Memory:** Remembers context across messages (e.g., Turn 1: *"Send SUI to Alice"*, Turn 2: *"5 SUI"* ➔ outputs completed transfer).
+* **Sui Programmable Transaction Blocks (PTB):** Chains multi-step intents into a single atomic batch (e.g., *"Swap SUI to USDC and send USDC to Alice"*).
+* **SuiNS Detection:** Automatically flags recipients as `suins` (`alice.sui`), `address` (`0x...`), or `alias`.
+* **Zero Autonomous Risk:** The AI *only proposes structured actions*. It never holds private keys and never signs transactions.
 
 ---
 
@@ -23,98 +21,147 @@ It handles:
 [User Chat] (Member 1 - Frontend)
       │
       ▼
-[AI Agent Module] (Member 2 - parseUserIntent)
+[AI Agent Module] (Member 2 - parseUserIntent(input, history))
       │
+      ├───────────────────────► [Clarification Needed?]
+      │                         AI returns friendly question to chat
       ▼
 [Structured Action JSON]
       │
       ▼
-[Validation & Routing] (Member 4 - Integration)
+[Validation & PTB Construction] (Member 4 Integration & Member 3 Sui SDK)
       │
       ▼
-[Sui Transaction / RPC] (Member 3 - Sui SDK & Wallet)
+[Transaction Preview & Signing] (Member 1 - Frontend UI modal)
+      │
+      ▼
+[Sui Blockchain Execution] (Atomic PTB on Sui Testnet/Mainnet)
 ```
 
 ---
 
 ## 3. Supported Actions & JSON Schemas
 
-The TypeScript interfaces are defined in [`src/types/actions.ts`](./src/types/actions.ts).
+TypeScript interfaces are in [`src/types/actions.ts`](./src/types/actions.ts).
 
-### A. `transfer`
-Emitted when the user requests to send funds to another user or address.
+### A. `batch` (Sui Programmable Transaction Block) 🌟
+Emitted when user requests multi-step operations in one sentence.
+```json
+{
+  "action": "batch",
+  "steps": [
+    {
+      "action": "swap",
+      "fromToken": "SUI",
+      "toToken": "USDC",
+      "amount": 10,
+      "requiresConfirmation": true,
+      "summary": "Swap 10 SUI for USDC"
+    },
+    {
+      "action": "transfer",
+      "recipient": "alice.sui",
+      "recipientType": "suins",
+      "amount": 5,
+      "token": "USDC",
+      "requiresConfirmation": true,
+      "summary": "Transfer 5 USDC to alice.sui"
+    }
+  ],
+  "requiresConfirmation": true,
+  "summary": "Swap 10 SUI to USDC and send 5 USDC to alice.sui in one atomic Sui PTB"
+}
+```
+
+### B. `transfer`
 ```json
 {
   "action": "transfer",
-  "recipient": "0x1234567890abcdef",
+  "recipient": "alice.sui",
+  "recipientType": "suins",
   "amount": 5,
-  "token": "SUI"
+  "token": "SUI",
+  "requiresConfirmation": true,
+  "summary": "Transfer 5 SUI to alice.sui"
 }
 ```
 
-### B. `get_balance`
-Emitted when the user inquires about their balance.
+### C. `swap`
 ```json
 {
-  "action": "get_balance",
-  "token": "SUI"
+  "action": "swap",
+  "fromToken": "SUI",
+  "toToken": "USDC",
+  "amount": 20,
+  "requiresConfirmation": true,
+  "summary": "Swap 20 SUI for USDC"
 }
 ```
 
-### C. `get_transactions`
-Emitted when the user asks to see recent wallet history.
+### D. `stake`
 ```json
 {
-  "action": "get_transactions",
-  "limit": 5
+  "action": "stake",
+  "amount": 50,
+  "token": "SUI",
+  "validatorAddress": "optional_0x_address",
+  "requiresConfirmation": true,
+  "summary": "Stake 50 SUI"
 }
 ```
 
-### D. `unknown` (Fallback / Guardrail)
-Emitted when an input is off-topic, nonsensical, or cannot be safely mapped.
+### E. `clarification`
+Emitted when required parameters are missing.
 ```json
 {
-  "action": "unknown",
-  "reason": "Input does not match any known wallet operation."
+  "action": "clarification",
+  "missingParameter": "amount",
+  "question": "How much SUI would you like to send to bob.sui?"
 }
 ```
 
 ---
 
-## 4. How Member 4 (Integration) Consumes This
-
-Member 4 can import `parseUserIntent` directly into the backend or API route:
+## 4. Frontend & Backend Integration Example
 
 ```typescript
-import { parseUserIntent } from './agent/parser.js';
+import { parseUserIntent, ChatMessage } from './agent/index.js';
 
-const result = await parseUserIntent("Send Alice 10 SUI");
+// Keep state in your frontend or session
+const chatHistory: ChatMessage[] = [];
 
-switch (result.action.action) {
-  case 'transfer':
-    // 1. Resolve 'Alice' to address if needed
-    // 2. Pass { recipient, amount, token } to Member 3's Sui transfer builder
-    // 3. Prompt user on frontend to sign
-    break;
+async function handleUserMessage(userText: string) {
+  const result = await parseUserIntent(userText, chatHistory);
 
-  case 'get_balance':
-    // Query Member 3's getBalance RPC
-    break;
+  // Update history
+  chatHistory.push({ role: 'user', text: userText });
+  chatHistory.push({ role: 'model', text: result.message });
 
-  case 'get_transactions':
-    // Query Member 3's getTransactions RPC
-    break;
+  // 1. Show natural AI text in the chat bubble
+  displayBotBubble(result.message);
 
-  case 'unknown':
-    // Return friendly error message to Member 1's frontend chat
-    break;
+  // 2. Handle structured action
+  switch (result.action.action) {
+    case 'batch':
+      // Member 3 constructs atomic Sui PTB with result.action.steps
+      showTransactionModal(result.action.summary, () => signPTB(result.action.steps));
+      break;
+
+    case 'transfer':
+      showTransactionModal(result.action.summary, () => signTransfer(result.action));
+      break;
+
+    case 'swap':
+      showTransactionModal(result.action.summary, () => signSwap(result.action));
+      break;
+
+    case 'stake':
+      showTransactionModal(result.action.summary, () => signStake(result.action));
+      break;
+
+    case 'clarification':
+      // Just waiting for user's next answer!
+      break;
+  }
 }
 ```
-
----
-
-## 5. Security Principles
-
-1. **No Keys in AI**: The AI never has access to private keys or seed phrases.
-2. **Deterministic Validation**: Member 4 must validate that `amount > 0` and `recipient` is valid before initiating any Sui transaction.
-3. **User Confirmation**: All financial transfers must require explicit user approval on the frontend before signing.
