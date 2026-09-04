@@ -1,20 +1,23 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { executeActionOnSui, fetchWalletBalance, parseIntentWithAI } from './api';
+import { REAL_WALLET_ADDRESS, executeActionOnSui, fetchWalletBalance, parseIntentWithAI } from './api';
 import { Chat } from './components/Chat';
 import { Dashboard } from './components/Dashboard';
 import { Landing } from './components/Landing';
 import { Review } from './components/Review';
 import { TxResult } from './components/TxResult';
-import { MOCK_ACTIVITY, MOCK_WALLET } from './mock';
+import { MOCK_ACTIVITY } from './mock';
 import type { ActivityItem, ChatMessage, ProposedAction, WalletState } from './types';
 
 type Screen = 'landing' | 'dashboard' | 'chat' | 'review' | 'result';
 
 export default function App() {
   const [wallet, setWallet] = useState<WalletState>(() => {
-    const saved = localStorage.getItem('sipnip_wallet');
-    return saved ? JSON.parse(saved) : MOCK_WALLET;
+    return {
+      connected: false,
+      address: REAL_WALLET_ADDRESS,
+      balance: undefined, // Fetched live from Sui blockchain
+    };
   });
 
   const [activity, setActivity] = useState<ActivityItem[]>(() => {
@@ -22,47 +25,48 @@ export default function App() {
     return saved ? JSON.parse(saved) : MOCK_ACTIVITY;
   });
 
-  const [screen, setScreen] = useState<Screen>(() => {
-    return wallet.connected ? 'dashboard' : 'landing';
-  });
-
+  const [screen, setScreen] = useState<Screen>('landing');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [aiThinking, setAiThinking] = useState(false);
   const [activeAction, setActiveAction] = useState<ProposedAction | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [balanceLoading, setBalanceLoading] = useState(false);
 
-  // Sync wallet state to localStorage so refresh keeps the updated balance
-  useEffect(() => {
-    localStorage.setItem('sipnip_wallet', JSON.stringify(wallet));
-  }, [wallet]);
-
-  // Sync activity history to localStorage
+  // Sync activity history
   useEffect(() => {
     localStorage.setItem('sipnip_activity', JSON.stringify(activity));
   }, [activity]);
 
+  // Always fetch real on-chain balance on initial mount
+  useEffect(() => {
+    loadRealBalance();
+  }, []);
+
   // ---- Wallet connect ----
   const connectWallet = () => {
     setConnecting(true);
+    loadRealBalance();
     setTimeout(() => {
-      setWallet((prev) => ({ ...prev, connected: true }));
+      setWallet((prev) => ({ ...prev, connected: true, address: REAL_WALLET_ADDRESS }));
       setConnecting(false);
       setScreen('dashboard');
-      loadRealBalance();
-    }, 900);
+    }, 800);
   };
 
-  // ---- Fetch the REAL balance from your teammate's backend ----
-  // If this fails (backend not running, CORS not set up yet, etc.)
-  // we just keep the mock balance instead of breaking the screen.
+  // ---- Fetch the 100% REAL balance directly from Sui Blockchain ----
   const loadRealBalance = async () => {
     setBalanceLoading(true);
     try {
-      const data = await fetchWalletBalance();
-      setWallet((prev) => ({ ...prev, balance: data.balance }));
+      const data = await fetchWalletBalance(REAL_WALLET_ADDRESS);
+      if (typeof data.balance === 'number') {
+        setWallet((prev) => ({
+          ...prev,
+          address: REAL_WALLET_ADDRESS,
+          balance: data.balance,
+        }));
+      }
     } catch (err) {
-      console.error('Could not load real balance, keeping mock value:', err);
+      console.error('Could not load real on-chain balance:', err);
     } finally {
       setBalanceLoading(false);
     }
@@ -126,6 +130,7 @@ export default function App() {
         ...prev,
       ]);
       setWallet((prev) => ({ ...prev, balance: (prev.balance ?? 0) - (updated.amount ?? 0) }));
+      setTimeout(() => loadRealBalance(), 2000);
     } else {
       setActiveAction({ ...activeAction, status: 'error', errorMessage: result.error });
     }
@@ -153,6 +158,7 @@ export default function App() {
             wallet={wallet}
             activity={activity}
             onOpenChat={() => setScreen('chat')}
+            onRefreshBalance={loadRealBalance}
             balanceLoading={balanceLoading}
           />
         )}

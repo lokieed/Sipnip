@@ -14,9 +14,55 @@ export interface BalanceResponse {
   explorerLink: string;
 }
 
+export const REAL_WALLET_ADDRESS =
+  '0x5a74b232069d7114400321fb89116192f219a32d3849f233928157aac5afc7b3';
+
+const SUI_GRAPHQL = 'https://graphql.testnet.sui.io/graphql';
 const API_BASE = 'http://localhost:3001';
 
-export async function fetchWalletBalance(): Promise<BalanceResponse> {
+/**
+ * Fetches the 100% REAL on-chain balance directly from Sui Testnet GraphQL.
+ * No hardcoding — queries live blockchain data.
+ */
+export async function fetchWalletBalance(
+  address: string = REAL_WALLET_ADDRESS
+): Promise<BalanceResponse> {
+  // 1. Direct on-chain query to Sui Testnet GraphQL RPC
+  try {
+    const res = await fetch(SUI_GRAPHQL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `
+          query {
+            address(address: "${address}") {
+              balance(coinType: "0x2::sui::SUI") {
+                totalBalance
+              }
+            }
+          }
+        `,
+      }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const mist = data?.data?.address?.balance?.totalBalance;
+      if (mist !== undefined && mist !== null) {
+        const sui = Number(mist) / 1_000_000_000;
+        return {
+          balance: sui,
+          unit: 'SUI',
+          network: 'testnet',
+          explorerLink: `https://suiscan.xyz/testnet/account/${address}`,
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('Direct Sui GraphQL call failed, checking backend server:', err);
+  }
+
+  // 2. Fallback to local Express server on port 3001
   const res = await fetch(`${API_BASE}/balance`);
   if (!res.ok) {
     throw new Error(`Balance request failed: ${res.status}`);

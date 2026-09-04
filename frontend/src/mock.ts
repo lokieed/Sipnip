@@ -10,10 +10,13 @@
 
 import type { ActivityItem, ProposedAction, WalletState } from './types';
 
+export const REAL_WALLET_ADDRESS =
+  '0x5a74b232069d7114400321fb89116192f219a32d3849f233928157aac5afc7b3';
+
 export const MOCK_WALLET: WalletState = {
   connected: false,
-  address: '0x8f2a...c91e',
-  balance: 42.5,
+  address: REAL_WALLET_ADDRESS,
+  balance: undefined,
 };
 
 export const MOCK_ACTIVITY: ActivityItem[] = [
