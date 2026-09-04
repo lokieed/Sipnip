@@ -23,7 +23,12 @@ export function TxResult({
           <Loader2 size={40} />
         </motion.div>
         <div className="text-lg font-semibold mb-1">Executing on Sui...</div>
-        <div className="text-sm text-[var(--color-text-tertiary)]">Confirming your transaction on-chain</div>
+        <div className="text-sm text-[var(--color-text-secondary)] mb-6 max-w-xs">
+          Please check your <strong>Slush Wallet</strong> extension popup to approve this transaction.
+        </div>
+        <Button variant="ghost" onClick={onDone}>
+          Cancel / Back to Dashboard
+        </Button>
       </Center>
     );
   }

@@ -113,11 +113,14 @@ export async function executeActionOnSui(action: ProposedAction): Promise<Execut
 
     if (res.ok) {
       const data = await res.json();
-      return {
-        success: true,
-        digest: data.txHash || data.digest,
-        serverMessage: data.message,
-      };
+      const digest = data.txHash || data.digest;
+      if (digest) {
+        return {
+          success: true,
+          digest,
+          serverMessage: data.message,
+        };
+      }
     }
   } catch (err) {
     console.warn('Local blockchain server on port 3001 not reachable, falling back to simulation:', err);

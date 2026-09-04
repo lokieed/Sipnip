@@ -9,6 +9,7 @@ export function Dashboard({
   onOpenChat,
   onRefreshBalance,
   onDisconnect,
+  onConnectWallet,
   walletName,
   balanceLoading = false,
 }: {
@@ -17,12 +18,14 @@ export function Dashboard({
   onOpenChat: () => void;
   onRefreshBalance?: () => void;
   onDisconnect?: () => void;
+  onConnectWallet?: () => void;
   walletName?: string;
   balanceLoading?: boolean;
 }) {
+  const isConnected = wallet.connected && !!wallet.address;
   const shortAddress = wallet.address
     ? `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`
-    : '0x5a74...c7b3';
+    : '';
 
   return (
     <div className="min-h-screen px-6 py-8 max-w-2xl mx-auto">
@@ -33,29 +36,37 @@ export function Dashboard({
           <span className="font-semibold text-sm">Sipnip</span>
         </div>
         <div className="flex items-center gap-2">
-          <a
-            href={`https://suiscan.xyz/testnet/account/${wallet.address || '0x5a74b232069d7114400321fb89116192f219a32d3849f233928157aac5afc7b3'}`}
-            target="_blank"
-            rel="noreferrer"
-            title={`View ${wallet.address} on Suiscan`}
-            className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)] hover:text-white bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-border-hover)] rounded-full px-3 py-1.5 transition-colors"
-          >
-            <Wallet size={13} />
-            <span className="font-mono">{shortAddress}</span>
-            {walletName && (
-              <span className="text-[10px] bg-[var(--color-surface-2)] text-[var(--color-sui)] px-1.5 py-0.5 rounded-full font-medium">
-                {walletName}
-              </span>
-            )}
-          </a>
-          {onDisconnect && (
-            <button
-              onClick={onDisconnect}
-              title="Disconnect wallet"
-              className="flex items-center text-xs text-[var(--color-text-tertiary)] hover:text-[var(--color-danger)] p-1.5 rounded-full border border-transparent hover:border-[var(--color-border)] transition-colors cursor-pointer"
-            >
-              <LogOut size={13} />
-            </button>
+          {isConnected ? (
+            <>
+              <a
+                href={`https://suiscan.xyz/testnet/account/${wallet.address}`}
+                target="_blank"
+                rel="noreferrer"
+                title={`View ${wallet.address} on Suiscan`}
+                className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)] hover:text-white bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-border-hover)] rounded-full px-3 py-1.5 transition-colors"
+              >
+                <Wallet size={13} />
+                <span className="font-mono">{shortAddress}</span>
+                {walletName && (
+                  <span className="text-[10px] bg-[var(--color-surface-2)] text-[var(--color-sui)] px-1.5 py-0.5 rounded-full font-medium">
+                    {walletName}
+                  </span>
+                )}
+              </a>
+              {onDisconnect && (
+                <button
+                  onClick={onDisconnect}
+                  title="Disconnect wallet"
+                  className="flex items-center text-xs text-[var(--color-text-tertiary)] hover:text-[var(--color-danger)] p-1.5 rounded-full border border-transparent hover:border-[var(--color-border)] transition-colors cursor-pointer"
+                >
+                  <LogOut size={13} />
+                </button>
+              )}
+            </>
+          ) : (
+            <Button onClick={onConnectWallet} icon={<Wallet size={13} />}>
+              Connect Slush
+            </Button>
           )}
         </div>
       </div>

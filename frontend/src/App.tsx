@@ -10,7 +10,7 @@ import {
   useSignAndExecuteTransaction,
 } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
-import { REAL_WALLET_ADDRESS, executeActionOnSui, fetchWalletBalance, parseIntentWithAI } from './api';
+import { REAL_WALLET_ADDRESS, fetchWalletBalance, parseIntentWithAI } from './api';
 import { Chat } from './components/Chat';
 import { Dashboard } from './components/Dashboard';
 import { Landing } from './components/Landing';
@@ -197,69 +197,104 @@ export default function App() {
   // ---- Confirm -> Real Slush popup & On-Chain Execution -> Success/Error ----
   const handleConfirm = async () => {
     if (!activeAction) return;
+
+    // If Slush is not connected, prompt connect and notify user
+    if (!currentAccount) {
+      connectWallet();
+      setActiveAction({
+        ...activeAction,
+        status: 'error',
+        errorMessage: 'Please connect your Slush wallet before confirming this transaction.',
+      });
+      setScreen('result');
+      return;
+    }
+
     setActiveAction({ ...activeAction, status: 'processing' });
     setScreen('result');
 
     try {
       let txDigest: string | undefined;
 
-      // When wallet extension (Slush) is connected, sign & execute on-chain
-      if (currentAccount) {
-        const tx = new Transaction();
-        const amountSui = activeAction.amount || 1;
-        const mistAmount = BigInt(Math.floor(amountSui * 1_000_000_000));
-        const [coin] = tx.splitCoins(tx.gas, [mistAmount]);
+      const tx = new Transaction();
+      const amountSui = activeAction.amount || 1;
+      const mistAmount = BigInt(Math.floor(amountSui * 1_000_000_000));
+      const [coin] = tx.splitCoins(tx.gas, [mistAmount]);
 
-        const targetAddress =
-          activeAction.recipientAddress ||
-          (activeAction.recipient?.startsWith('0x') ? activeAction.recipient : undefined) ||
-          '0xaa0b19013228e2392e075ea7976db60957718c03a53af3073a54cad1c854bb8d';
+      const targetAddress =
+        activeAction.recipientAddress ||
+        (activeAction.recipient?.startsWith('0x') ? activeAction.recipient : undefined) ||
+        '0xaa0b19013228e2392e075ea7976db60957718c03a53af3073a54cad1c854bb8d';
 
-        tx.transferObjects([coin], targetAddress);
+      tx.transferObjects([coin], targetAddress);
+      tx.setSenderIfNotSet(currentAccount.address);
 
-        // This prompts the Slush Wallet browser extension popup!
+      const activeWallet = currentWallet.currentWallet;
+
+      // 1. Try native Sui Wallet Standard feature (sui:signAndExecuteTransaction)
+      const signAndExecuteFeature = (activeWallet?.features as any)?.[
+        'sui:signAndExecuteTransaction'
+      ]?.signAndExecuteTransaction;
+
+      // 2. Try legacy Sui Wallet Standard feature (sui:signAndExecuteTransactionBlock)
+      const signAndExecuteBlockFeature = (activeWallet?.features as any)?.[
+        'sui:signAndExecuteTransactionBlock'
+      ]?.signAndExecuteTransactionBlock;
+
+      if (signAndExecuteFeature) {
+        console.log('Executing via native wallet sui:signAndExecuteTransaction...');
+        const res = await signAndExecuteFeature({
+          transaction: tx,
+          account: currentAccount,
+          chain: 'sui:testnet',
+        });
+        txDigest = res?.digest;
+      } else if (signAndExecuteBlockFeature) {
+        console.log('Executing via native wallet sui:signAndExecuteTransactionBlock...');
+        const res = await signAndExecuteBlockFeature({
+          transactionBlock: tx,
+          account: currentAccount,
+          chain: 'sui:testnet',
+        });
+        txDigest = res?.digest;
+      } else {
+        console.log('Executing via dapp-kit signAndExecuteTransaction...');
         const response = await signAndExecuteTransaction({
           transaction: tx,
         });
-
-        txDigest = response.digest;
-      } else {
-        // Fallback execution if no wallet extension is connected
-        const result = await executeActionOnSui(activeAction);
-        if (!result.success) {
-          throw new Error(result.error || 'Transaction execution failed.');
-        }
-        txDigest = result.digest;
+        txDigest = response?.digest;
       }
 
-      if (txDigest) {
-        const updated: ProposedAction = {
-          ...activeAction,
+      if (!txDigest) {
+        throw new Error('No transaction digest was returned by Slush.');
+      }
+
+      const updated: ProposedAction = {
+        ...activeAction,
+        status: 'success',
+        txDigest,
+      };
+      setActiveAction(updated);
+      setActivity((prev) => [
+        {
+          id: updated.id,
+          summary: updated.summary,
           status: 'success',
+          timestamp: 'Just now',
           txDigest,
-        };
-        setActiveAction(updated);
-        setActivity((prev) => [
-          {
-            id: updated.id,
-            summary: updated.summary,
-            status: 'success',
-            timestamp: 'Just now',
-            txDigest,
-          },
-          ...prev,
-        ]);
+        },
+        ...prev,
+      ]);
 
-        const amountSpent = updated.amount ?? 0;
-        const currentSpent = Number(localStorage.getItem('sipnip_spent') || 0);
-        const newSpent = currentSpent + amountSpent;
-        localStorage.setItem('sipnip_spent', newSpent.toString());
+      const amountSpent = updated.amount ?? 0;
+      const currentSpent = Number(localStorage.getItem('sipnip_spent') || 0);
+      const newSpent = currentSpent + amountSpent;
+      localStorage.setItem('sipnip_spent', newSpent.toString());
 
-        // Refresh on-chain balance directly from Sui blockchain
-        setTimeout(() => {
-          loadRealBalance(true, currentAccount?.address);
-        }, 2000);
-      }
+      // Refresh on-chain balance directly from Sui blockchain GraphQL
+      setTimeout(() => {
+        loadRealBalance(true, currentAccount.address);
+      }, 2000);
     } catch (err: any) {
       console.error('Execution error:', err);
       setActiveAction({
@@ -298,6 +333,7 @@ export default function App() {
               onOpenChat={() => setScreen('chat')}
               onRefreshBalance={() => loadRealBalance(true)}
               onDisconnect={handleDisconnect}
+              onConnectWallet={connectWallet}
               walletName={activeWalletName}
               balanceLoading={balanceLoading}
             />
