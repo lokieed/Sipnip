@@ -46,25 +46,30 @@ export function TxResult({
 
         <Card layoutId="action-review-card" className="p-4 w-full max-w-xs mb-6 overflow-hidden">
           <div className="flex items-center justify-between text-xs text-[var(--color-text-tertiary)] mb-1.5">
-            <span>Transaction Digest</span>
+            <span>Recipient Address</span>
             <span className="text-[10px] text-[var(--color-sui)] font-mono">Sui Testnet</span>
           </div>
-          <div className="text-xs font-mono break-all leading-relaxed bg-[var(--color-surface-2)]/60 p-2.5 rounded border border-[var(--color-border)]/50 select-all">
-            {action.txDigest}
+          <div className="text-xs font-mono break-all leading-relaxed bg-[var(--color-surface-2)]/60 p-2.5 rounded border border-[var(--color-border)]/50 select-all mb-3">
+            {action.recipientAddress || action.recipient}
+          </div>
+          <div className="flex justify-between text-xs text-[var(--color-text-secondary)]">
+            <span>Amount</span>
+            <span className="font-mono font-semibold text-[var(--color-text-primary)]">{action.amount} SUI</span>
           </div>
         </Card>
 
         <div className="flex flex-col gap-2.5 w-full max-w-xs">
-          <Button
-            fullWidth
-            variant="secondary"
-            onClick={() => {
-              const hash = action.txDigest || '8z3TxMuEyAuCTZvKwz1eAcLyW25ZbYhtcVAAd1P76KmQ';
-              window.open(`https://suiscan.xyz/testnet/tx/${hash}`, '_blank');
-            }}
-          >
-            View on Suiscan ↗
-          </Button>
+          {action.recipientAddress && (
+            <Button
+              fullWidth
+              variant="secondary"
+              onClick={() => {
+                window.open(`https://suiscan.xyz/testnet/account/${action.recipientAddress}`, '_blank');
+              }}
+            >
+              Verify Recipient on Suiscan ↗
+            </Button>
+          )}
           <Button fullWidth onClick={onDone}>Back to Dashboard</Button>
         </div>
       </Center>

@@ -113,16 +113,9 @@ export async function executeActionOnSui(action: ProposedAction): Promise<Execut
 
     if (res.ok) {
       const data = await res.json();
-      const digest =
-        data.txHash ||
-        data.digest ||
-        (data.status === 'escrow_created'
-          ? '8z3TxMuEyAuCTZvKwz1eAcLyW25ZbYhtcVAAd1P76KmQ'
-          : 'AbNdWG4K9os8FAFn3sSd5TZ7pG1h2nUAQVndmNoQWF8E');
-
       return {
         success: true,
-        digest,
+        digest: data.txHash || data.digest,
         serverMessage: data.message,
       };
     }
