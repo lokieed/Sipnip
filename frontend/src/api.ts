@@ -19,7 +19,10 @@ export const REAL_WALLET_ADDRESS =
   '0x5a74b232069d7114400321fb89116192f219a32d3849f233928157aac5afc7b3';
 
 const SUI_GRAPHQL = 'https://graphql.testnet.sui.io/graphql';
-const API_BASE = 'http://localhost:3001';
+// Points at the hosted contracts server (Render) so the demo doesn't
+// depend on anyone's laptop running `node server.js` locally.
+// Falls back to localhost for local development.
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
 /**
  * Fetches the 100% REAL on-chain balance directly from Sui Testnet GraphQL.

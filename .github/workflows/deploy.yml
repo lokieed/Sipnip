@@ -37,6 +37,9 @@ jobs:
       - name: Build frontend
         env:
           VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
+          # Not a secret - it's just the public URL of the hosted contracts
+          # server (Render), so it's safe to keep directly in the workflow.
+          VITE_API_BASE_URL: https://sipnip.onrender.com
         run: npm run build
 
       - name: Upload GitHub Pages artifact
