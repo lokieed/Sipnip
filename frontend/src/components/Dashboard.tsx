@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { MessageSquare, RefreshCw, Wallet } from 'lucide-react';
+import { LogOut, MessageSquare, RefreshCw, Wallet } from 'lucide-react';
 import type { ActivityItem, WalletState } from '../types';
 import { Badge, Button, Card, StatusDot } from './ui';
 
@@ -8,12 +8,16 @@ export function Dashboard({
   activity,
   onOpenChat,
   onRefreshBalance,
+  onDisconnect,
+  walletName,
   balanceLoading = false,
 }: {
   wallet: WalletState;
   activity: ActivityItem[];
   onOpenChat: () => void;
   onRefreshBalance?: () => void;
+  onDisconnect?: () => void;
+  walletName?: string;
   balanceLoading?: boolean;
 }) {
   const shortAddress = wallet.address
@@ -28,16 +32,32 @@ export function Dashboard({
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[var(--color-ai)] to-[var(--color-sui)]" />
           <span className="font-semibold text-sm">Sipnip</span>
         </div>
-        <a
-          href={`https://suiscan.xyz/testnet/account/${wallet.address || '0x5a74b232069d7114400321fb89116192f219a32d3849f233928157aac5afc7b3'}`}
-          target="_blank"
-          rel="noreferrer"
-          title={`View ${wallet.address} on Suiscan`}
-          className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)] hover:text-white bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-border-hover)] rounded-full px-3 py-1.5 transition-colors"
-        >
-          <Wallet size={13} />
-          <span className="font-mono">{shortAddress}</span>
-        </a>
+        <div className="flex items-center gap-2">
+          <a
+            href={`https://suiscan.xyz/testnet/account/${wallet.address || '0x5a74b232069d7114400321fb89116192f219a32d3849f233928157aac5afc7b3'}`}
+            target="_blank"
+            rel="noreferrer"
+            title={`View ${wallet.address} on Suiscan`}
+            className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)] hover:text-white bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-border-hover)] rounded-full px-3 py-1.5 transition-colors"
+          >
+            <Wallet size={13} />
+            <span className="font-mono">{shortAddress}</span>
+            {walletName && (
+              <span className="text-[10px] bg-[var(--color-surface-2)] text-[var(--color-sui)] px-1.5 py-0.5 rounded-full font-medium">
+                {walletName}
+              </span>
+            )}
+          </a>
+          {onDisconnect && (
+            <button
+              onClick={onDisconnect}
+              title="Disconnect wallet"
+              className="flex items-center text-xs text-[var(--color-text-tertiary)] hover:text-[var(--color-danger)] p-1.5 rounded-full border border-transparent hover:border-[var(--color-border)] transition-colors cursor-pointer"
+            >
+              <LogOut size={13} />
+            </button>
+          )}
+        </div>
       </div>
 
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>

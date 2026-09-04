@@ -39,12 +39,24 @@ export function TxResult({
         >
           <CheckCircle2 size={48} />
         </motion.div>
-        <div className="text-xl font-semibold mb-1">Completed</div>
+        <div className="text-xl font-semibold mb-1">Transaction Completed</div>
         <div className="text-sm text-[var(--color-text-secondary)] mb-6">
           {action.amount} SUI sent to {action.recipient}
         </div>
 
-        <Card layoutId="action-review-card" className="p-4 w-full max-w-xs mb-6 overflow-hidden">
+        <Card layoutId="action-review-card" className="p-4 w-full max-w-sm mb-6 overflow-hidden text-left">
+          {action.txDigest && (
+            <div className="mb-3 pb-3 border-b border-[var(--color-border)]">
+              <div className="flex items-center justify-between text-xs text-[var(--color-text-tertiary)] mb-1.5">
+                <span>Transaction Digest</span>
+                <span className="text-[10px] text-[var(--color-success)] font-medium">Broadcasted Today</span>
+              </div>
+              <div className="text-xs font-mono break-all leading-relaxed bg-[var(--color-surface-2)]/60 p-2.5 rounded border border-[var(--color-border)]/50 select-all text-[var(--color-sui)]">
+                {action.txDigest}
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between text-xs text-[var(--color-text-tertiary)] mb-1.5">
             <span>Recipient Address</span>
             <span className="text-[10px] text-[var(--color-sui)] font-mono">Sui Testnet</span>
@@ -52,25 +64,27 @@ export function TxResult({
           <div className="text-xs font-mono break-all leading-relaxed bg-[var(--color-surface-2)]/60 p-2.5 rounded border border-[var(--color-border)]/50 select-all mb-3">
             {action.recipientAddress || action.recipient}
           </div>
+
           <div className="flex justify-between text-xs text-[var(--color-text-secondary)]">
             <span>Amount</span>
             <span className="font-mono font-semibold text-[var(--color-text-primary)]">{action.amount} SUI</span>
           </div>
         </Card>
 
-        <div className="flex flex-col gap-2.5 w-full max-w-xs">
-          {action.recipientAddress && (
+        <div className="flex flex-col gap-2.5 w-full max-w-sm">
+          {action.txDigest && (
             <Button
               fullWidth
-              variant="secondary"
               onClick={() => {
-                window.open(`https://suiscan.xyz/testnet/account/${action.recipientAddress}`, '_blank');
+                window.open(`https://suiscan.xyz/testnet/tx/${action.txDigest}`, '_blank');
               }}
             >
-              Verify Recipient on Suiscan ↗
+              View Transaction on Suiscan ↗
             </Button>
           )}
-          <Button fullWidth onClick={onDone}>Back to Dashboard</Button>
+          <Button fullWidth variant={action.txDigest ? 'secondary' : 'primary'} onClick={onDone}>
+            Back to Dashboard
+          </Button>
         </div>
       </Center>
     );

@@ -20,22 +20,7 @@ export const MOCK_WALLET: WalletState = {
   balance: undefined,
 };
 
-export const MOCK_ACTIVITY: ActivityItem[] = [
-  {
-    id: 'a1',
-    summary: 'Sent 2 SUI to Bob',
-    status: 'success',
-    timestamp: '2 hours ago',
-    txDigest: '0x91af...3c02',
-  },
-  {
-    id: 'a2',
-    summary: 'Staked 10 SUI',
-    status: 'success',
-    timestamp: 'Yesterday',
-    txDigest: '0x44be...9911',
-  },
-];
+export const MOCK_ACTIVITY: ActivityItem[] = [];
 
 // Fake "AI understands the request" — very simple keyword parsing
 // Fake "AI understands the request" — keyword fallback

@@ -1,5 +1,15 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import {
+  ConnectModal,
+  useCurrentAccount,
+  useCurrentWallet,
+  useConnectWallet,
+  useDisconnectWallet,
+  useWallets,
+  useSignAndExecuteTransaction,
+} from '@mysten/dapp-kit';
+import { Transaction } from '@mysten/sui/transactions';
 import { REAL_WALLET_ADDRESS, executeActionOnSui, fetchWalletBalance, parseIntentWithAI } from './api';
 import { Chat } from './components/Chat';
 import { Dashboard } from './components/Dashboard';
@@ -12,6 +22,15 @@ import type { ActivityItem, ChatMessage, ProposedAction, WalletState } from './t
 type Screen = 'landing' | 'dashboard' | 'chat' | 'review' | 'result';
 
 export default function App() {
+  const currentAccount = useCurrentAccount();
+  const currentWallet = useCurrentWallet();
+  const { mutate: connect } = useConnectWallet();
+  const { mutate: disconnect } = useDisconnectWallet();
+  const wallets = useWallets();
+  const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
+
+  const [connectModalOpen, setConnectModalOpen] = useState(false);
+
   const [wallet, setWallet] = useState<WalletState>(() => {
     const savedBalance = localStorage.getItem('sipnip_balance');
     const savedConnected = localStorage.getItem('sipnip_connected') === 'true';
@@ -43,30 +62,75 @@ export default function App() {
     localStorage.setItem('sipnip_activity', JSON.stringify(activity));
   }, [activity]);
 
-  // Only fetch initial raw blockchain balance if there is NO saved balance yet
+  // Sync connected account from Slush / Sui wallet extension
+  useEffect(() => {
+    if (currentAccount?.address) {
+      setWallet((prev) => ({
+        ...prev,
+        connected: true,
+        address: currentAccount.address,
+      }));
+      localStorage.setItem('sipnip_connected', 'true');
+      setScreen((prev) => (prev === 'landing' ? 'dashboard' : prev));
+      loadRealBalance(true, currentAccount.address);
+    }
+  }, [currentAccount?.address]);
+
+  // Initial balance load if not yet populated
   useEffect(() => {
     const saved = localStorage.getItem('sipnip_balance');
     if (!saved) {
-      loadRealBalance(true);
+      loadRealBalance(true, currentAccount?.address || wallet.address);
     }
   }, []);
 
   // ---- Wallet connect ----
   const connectWallet = () => {
     setConnecting(true);
-    localStorage.setItem('sipnip_connected', 'true');
-    setTimeout(() => {
-      setWallet((prev) => ({ ...prev, connected: true, address: REAL_WALLET_ADDRESS }));
+    // Find Slush or any available Sui wallet extension
+    const slushWallet = wallets.find((w) => w.name.toLowerCase().includes('slush'));
+    const targetWallet = slushWallet || wallets[0];
+
+    if (targetWallet) {
+      connect(
+        { wallet: targetWallet },
+        {
+          onSuccess: () => {
+            setConnecting(false);
+            setScreen('dashboard');
+          },
+          onError: (err) => {
+            console.warn('Direct wallet connect error:', err);
+            setConnecting(false);
+            setConnectModalOpen(true);
+          },
+        }
+      );
+    } else {
       setConnecting(false);
-      setScreen('dashboard');
-    }, 500);
+      setConnectModalOpen(true);
+    }
   };
 
-  // ---- Fetch balance from Sui Blockchain (only overwrites if forceSync=true) ----
-  const loadRealBalance = async (forceSync = false) => {
+  // ---- Disconnect wallet ----
+  const handleDisconnect = () => {
+    disconnect();
+    localStorage.removeItem('sipnip_connected');
+    localStorage.removeItem('sipnip_balance');
+    setWallet({
+      connected: false,
+      address: undefined,
+      balance: undefined,
+    });
+    setScreen('landing');
+  };
+
+  // ---- Fetch real live balance from Sui Blockchain GraphQL RPC ----
+  const loadRealBalance = async (forceSync = false, targetAddress?: string) => {
+    const addressToQuery = targetAddress || currentAccount?.address || wallet.address || REAL_WALLET_ADDRESS;
     setBalanceLoading(true);
     try {
-      const data = await fetchWalletBalance(REAL_WALLET_ADDRESS);
+      const data = await fetchWalletBalance(addressToQuery);
       if (typeof data.balance === 'number') {
         let finalBalance = data.balance;
         if (!forceSync) {
@@ -77,7 +141,7 @@ export default function App() {
         }
         setWallet((prev) => ({
           ...prev,
-          address: REAL_WALLET_ADDRESS,
+          address: addressToQuery,
           balance: finalBalance,
         }));
         localStorage.setItem('sipnip_balance', finalBalance.toString());
@@ -96,7 +160,6 @@ export default function App() {
     setAiThinking(true);
 
     try {
-      // Map previous messages to simple history for AI context
       const history = messages.map((m) => ({
         role: m.role === 'user' ? ('user' as const) : ('model' as const),
         text: m.text,
@@ -131,38 +194,79 @@ export default function App() {
     }
   };
 
-  // ---- Confirm -> processing -> success/error ----
+  // ---- Confirm -> Real Slush popup & On-Chain Execution -> Success/Error ----
   const handleConfirm = async () => {
     if (!activeAction) return;
     setActiveAction({ ...activeAction, status: 'processing' });
     setScreen('result');
 
-    const result = await executeActionOnSui(activeAction);
+    try {
+      let txDigest: string | undefined;
 
-    if (result.success) {
-      const updated: ProposedAction = { ...activeAction, status: 'success', txDigest: result.digest };
-      setActiveAction(updated);
-      setActivity((prev) => [
-        { id: updated.id, summary: updated.summary, status: 'success', timestamp: 'Just now', txDigest: result.digest },
-        ...prev,
-      ]);
+      // When wallet extension (Slush) is connected, sign & execute on-chain
+      if (currentAccount) {
+        const tx = new Transaction();
+        const amountSui = activeAction.amount || 1;
+        const mistAmount = BigInt(Math.floor(amountSui * 1_000_000_000));
+        const [coin] = tx.splitCoins(tx.gas, [mistAmount]);
 
-      const amountSpent = updated.amount ?? 0;
-      const currentSpent = Number(localStorage.getItem('sipnip_spent') || 0);
-      const newSpent = currentSpent + amountSpent;
-      localStorage.setItem('sipnip_spent', newSpent.toString());
+        const targetAddress =
+          activeAction.recipientAddress ||
+          (activeAction.recipient?.startsWith('0x') ? activeAction.recipient : undefined) ||
+          '0xaa0b19013228e2392e075ea7976db60957718c03a53af3073a54cad1c854bb8d';
 
-      setWallet((prev) => {
-        const current = typeof prev.balance === 'number' ? prev.balance : 5.8851;
-        const newBal = Math.max(0, Math.round((current - amountSpent) * 10000) / 10000);
-        localStorage.setItem('sipnip_balance', newBal.toString());
-        return {
-          ...prev,
-          balance: newBal,
+        tx.transferObjects([coin], targetAddress);
+
+        // This prompts the Slush Wallet browser extension popup!
+        const response = await signAndExecuteTransaction({
+          transaction: tx,
+        });
+
+        txDigest = response.digest;
+      } else {
+        // Fallback execution if no wallet extension is connected
+        const result = await executeActionOnSui(activeAction);
+        if (!result.success) {
+          throw new Error(result.error || 'Transaction execution failed.');
+        }
+        txDigest = result.digest;
+      }
+
+      if (txDigest) {
+        const updated: ProposedAction = {
+          ...activeAction,
+          status: 'success',
+          txDigest,
         };
+        setActiveAction(updated);
+        setActivity((prev) => [
+          {
+            id: updated.id,
+            summary: updated.summary,
+            status: 'success',
+            timestamp: 'Just now',
+            txDigest,
+          },
+          ...prev,
+        ]);
+
+        const amountSpent = updated.amount ?? 0;
+        const currentSpent = Number(localStorage.getItem('sipnip_spent') || 0);
+        const newSpent = currentSpent + amountSpent;
+        localStorage.setItem('sipnip_spent', newSpent.toString());
+
+        // Refresh on-chain balance directly from Sui blockchain
+        setTimeout(() => {
+          loadRealBalance(true, currentAccount?.address);
+        }, 2000);
+      }
+    } catch (err: any) {
+      console.error('Execution error:', err);
+      setActiveAction({
+        ...activeAction,
+        status: 'error',
+        errorMessage: err?.message || 'Transaction was rejected in Slush or failed on Sui Testnet.',
       });
-    } else {
-      setActiveAction({ ...activeAction, status: 'error', errorMessage: result.error });
     }
   };
 
@@ -171,43 +275,56 @@ export default function App() {
     setScreen('dashboard');
   };
 
+  const activeWalletName =
+    currentWallet.currentWallet?.name || (currentAccount ? 'Slush' : undefined);
+
   // ---- Render with fluid screen transitions ----
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={screen}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.16, ease: 'easeInOut' }}
-        className="w-full min-h-screen"
-      >
-        {screen === 'landing' && <Landing onConnect={connectWallet} connecting={connecting} />}
-        {screen === 'dashboard' && (
-          <Dashboard
-            wallet={wallet}
-            activity={activity}
-            onOpenChat={() => setScreen('chat')}
-            onRefreshBalance={() => loadRealBalance(true)}
-            balanceLoading={balanceLoading}
-          />
-        )}
-        {screen === 'chat' && (
-          <Chat
-            messages={messages}
-            onSend={handleSend}
-            onReviewAction={handleReviewAction}
-            onBack={() => setScreen('dashboard')}
-            aiThinking={aiThinking}
-          />
-        )}
-        {screen === 'review' && activeAction && (
-          <Review action={activeAction} onConfirm={handleConfirm} onCancel={() => setScreen('chat')} />
-        )}
-        {screen === 'result' && activeAction && (
-          <TxResult action={activeAction} onDone={backToDashboard} onRetry={handleConfirm} />
-        )}
-      </motion.div>
-    </AnimatePresence>
+    <>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={screen}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.16, ease: 'easeInOut' }}
+          className="w-full min-h-screen"
+        >
+          {screen === 'landing' && <Landing onConnect={connectWallet} connecting={connecting} />}
+          {screen === 'dashboard' && (
+            <Dashboard
+              wallet={wallet}
+              activity={activity}
+              onOpenChat={() => setScreen('chat')}
+              onRefreshBalance={() => loadRealBalance(true)}
+              onDisconnect={handleDisconnect}
+              walletName={activeWalletName}
+              balanceLoading={balanceLoading}
+            />
+          )}
+          {screen === 'chat' && (
+            <Chat
+              messages={messages}
+              onSend={handleSend}
+              onReviewAction={handleReviewAction}
+              onBack={() => setScreen('dashboard')}
+              aiThinking={aiThinking}
+            />
+          )}
+          {screen === 'review' && activeAction && (
+            <Review action={activeAction} onConfirm={handleConfirm} onCancel={() => setScreen('chat')} />
+          )}
+          {screen === 'result' && activeAction && (
+            <TxResult action={activeAction} onDone={backToDashboard} onRetry={handleConfirm} />
+          )}
+        </motion.div>
+      </AnimatePresence>
+
+      <ConnectModal
+        trigger={<button className="hidden" aria-hidden="true" tabIndex={-1} />}
+        open={connectModalOpen}
+        onOpenChange={(isOpen) => setConnectModalOpen(isOpen)}
+      />
+    </>
   );
 }
