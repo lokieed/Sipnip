@@ -97,10 +97,33 @@ export function Dashboard({
             </Card>
           )}
           {activity.map((item) => (
-            <Card key={item.id} className="p-4 flex items-center justify-between">
+            <Card
+              key={item.id}
+              className={`p-4 flex items-center justify-between transition-all ${item.txDigest ? 'hover:border-[var(--color-border-hover)] cursor-pointer group' : ''}`}
+              onClick={() => {
+                if (item.txDigest) {
+                  const hash = item.txDigest.startsWith('0x') ? item.txDigest : item.txDigest;
+                  window.open(`https://suiscan.xyz/testnet/tx/${hash}`, '_blank');
+                }
+              }}
+            >
               <div>
-                <div className="text-sm font-medium">{item.summary}</div>
-                <div className="text-xs text-[var(--color-text-tertiary)] mt-0.5">{item.timestamp}</div>
+                <div className="text-sm font-medium flex items-center gap-2">
+                  <span>{item.summary}</span>
+                  {item.txDigest && (
+                    <span className="text-[10px] text-[var(--color-sui)] font-mono group-hover:underline">
+                      Suiscan ↗
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-[var(--color-text-tertiary)] mt-0.5 flex items-center gap-2">
+                  <span>{item.timestamp}</span>
+                  {item.txDigest && (
+                    <span className="font-mono text-[11px] text-[var(--color-text-tertiary)]">
+                      {item.txDigest.length > 16 ? `${item.txDigest.slice(0, 10)}...` : item.txDigest}
+                    </span>
+                  )}
+                </div>
               </div>
               <Badge tone={item.status === 'success' ? 'success' : item.status === 'error' ? 'danger' : 'neutral'}>
                 {item.status}
