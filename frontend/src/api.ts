@@ -77,6 +77,7 @@ export async function fetchWalletBalance(
 export interface ExecutionResult {
   success: boolean;
   digest?: string;
+  escrowId?: string;
   error?: string;
   serverMessage?: string;
 }
@@ -92,21 +93,24 @@ export async function executeActionOnSui(action: ProposedAction): Promise<Execut
       (action.recipient?.startsWith('0x') ? action.recipient : undefined) ||
       '0xaa0b19013228e2392e075ea7976db60957718c03a53af3073a54cad1c854bb8d';
 
-    let payload: any = {
-      action: 'prepareTransaction',
-      recipient: targetAddress,
-      amount: action.amount || 1,
-      purpose: action.purpose || action.summary,
-    };
-
-    if (action.summary?.toLowerCase().includes('escrow') || action.type === 'stake') {
-      payload = {
-        action: 'createEscrow',
-        recipient: targetAddress,
-        amount: action.amount || 1,
-        description: action.purpose || action.summary,
-      };
-    }
+    // Escrow requests must go through Nicole's deployed Move contract on the
+    // backend (`createEscrow`), NOT a plain wallet-signed transfer — that's
+    // the whole point of the feature. Route by action.type, not by sniffing
+    // the summary text.
+    const payload: any =
+      action.type === 'escrow'
+        ? {
+            action: 'createEscrow',
+            recipient: targetAddress,
+            amount: action.amount || 1,
+            description: action.purpose || action.summary,
+          }
+        : {
+            action: 'prepareTransaction',
+            recipient: targetAddress,
+            amount: action.amount || 1,
+            purpose: action.purpose || action.summary,
+          };
 
     const res = await fetch(`${API_BASE}/action`, {
       method: 'POST',
@@ -121,12 +125,16 @@ export async function executeActionOnSui(action: ProposedAction): Promise<Execut
         return {
           success: true,
           digest,
+          escrowId: data.escrowId,
           serverMessage: data.message,
         };
       }
+      if (data.status === 'error') {
+        return { success: false, error: data.message };
+      }
     }
   } catch (err) {
-    console.warn('Local blockchain server on port 3001 not reachable, falling back to simulation:', err);
+    console.warn('Blockchain server not reachable, falling back to simulation:', err);
   }
 
   // Graceful fallback to guarantee demo never breaks
@@ -141,8 +149,13 @@ SUPPORTED ACTIONS:
 1. "transfer": {"action": "transfer", "recipient": string, "amount": number, "token": "SUI", "purpose": string, "summary": string}
 2. "swap": {"action": "swap", "fromToken": string, "toToken": string, "amount": number, "summary": string}
 3. "stake": {"action": "stake", "amount": number, "token": "SUI", "summary": string}
-4. "clarification": {"action": "clarification", "question": string}
-5. "unknown": {"action": "unknown", "reason": string}
+4. "create_escrow": {"action": "create_escrow", "recipient": string, "amount": number, "purpose": string, "summary": string}
+5. "clarification": {"action": "clarification", "question": string}
+6. "unknown": {"action": "unknown", "reason": string}
+
+Use "create_escrow" (NOT "transfer") whenever the user asks to hold, lock, or escrow funds for someone, or to release/pay them only once work is done — phrases like "create an escrow", "hold X SUI for", "pay on delivery", "release funds when finished".
+
+CRITICAL RULE FOR "recipient": if the user's message contains a Sui address (a string starting with "0x"), copy that address into "recipient" EXACTLY, character for character. Never shorten it, paraphrase it, or replace it with a placeholder like "Unknown" — an address you cannot fully read should still be copied verbatim, not guessed.
 
 RESPONSE FORMAT:
 Always return JSON:
@@ -215,8 +228,20 @@ export async function parseIntentWithAI(
     const actionData = parsed.action || parsed;
     const aiMessage = parsed.message || (actionData.action === 'clarification' ? actionData.question : 'Action ready for review.');
 
+    // If the AI garbled or dropped the address, fall back to whatever raw
+    // 0x... address actually appears in what the user typed — that's always
+    // more trustworthy than an AI-recalled string.
+    const rawAddressInText = userText.match(/0x[a-fA-F0-9]{4,}/)?.[0];
+    if (
+      (actionData.action === 'transfer' || actionData.action === 'create_escrow') &&
+      rawAddressInText &&
+      (!actionData.recipient || !actionData.recipient.startsWith('0x') || actionData.recipient.toLowerCase() === 'unknown')
+    ) {
+      actionData.recipient = rawAddressInText;
+    }
+
     // Map AI output to Member 1's ProposedAction
-    if (actionData.action === 'transfer' || actionData.action === 'create_escrow') {
+    if (actionData.action === 'transfer') {
       const contact = resolveRecipient(actionData.recipient);
       const recipientAddress = contact ? contact.address : actionData.recipient;
       const displayRecipient = contact
@@ -239,6 +264,35 @@ export async function parseIntentWithAI(
           amount: actionData.amount,
           token: actionData.token || 'SUI',
           purpose: actionData.purpose || 'Direct transfer',
+          network: 'Sui Testnet',
+          createdAt: new Date().toISOString(),
+        },
+      };
+    }
+
+    if (actionData.action === 'create_escrow') {
+      const contact = resolveRecipient(actionData.recipient);
+      const recipientAddress = contact ? contact.address : actionData.recipient;
+      const displayRecipient = contact
+        ? `${contact.name} (${contact.address.slice(0, 6)}...${contact.address.slice(-4)})`
+        : actionData.recipient;
+
+      const aiReply = contact
+        ? `Found ${contact.name} (${contact.role}) in your contacts.\nPrepared an escrow to ${contact.address.slice(0, 6)}...${contact.address.slice(-4)}.`
+        : aiMessage;
+
+      return {
+        message: aiReply,
+        action: {
+          id: `action-${Date.now()}`,
+          type: 'escrow',
+          status: 'proposed',
+          summary: actionData.summary || `Escrow ${actionData.amount} SUI for ${displayRecipient}`,
+          recipient: displayRecipient,
+          recipientAddress: recipientAddress,
+          amount: actionData.amount,
+          token: 'SUI',
+          purpose: actionData.purpose || 'Escrow payment',
           network: 'Sui Testnet',
           createdAt: new Date().toISOString(),
         },

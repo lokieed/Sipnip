@@ -4,7 +4,7 @@
 // and Sui teammates so their output matches what the UI expects.
 // ============================================================
 
-export type ActionType = 'send_payment' | 'swap' | 'stake';
+export type ActionType = 'send_payment' | 'swap' | 'stake' | 'escrow';
 
 export type ActionStatus =
   | 'proposed'   // AI suggested it, waiting for user to review
@@ -26,6 +26,7 @@ export interface ProposedAction {
   purpose?: string;
   network?: string;       // e.g. "Sui Testnet"
   txDigest?: string;      // filled in after success
+  escrowId?: string;      // filled in after a successful escrow creation
   errorMessage?: string;
   createdAt: string;
 }
