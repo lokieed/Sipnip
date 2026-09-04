@@ -54,15 +54,20 @@ export default function App() {
   };
 
   // ---- Fetch the 100% REAL balance directly from Sui Blockchain ----
-  const loadRealBalance = async () => {
+  const loadRealBalance = async (resetSpent = false) => {
     setBalanceLoading(true);
     try {
+      if (resetSpent) {
+        localStorage.removeItem('sipnip_spent');
+      }
       const data = await fetchWalletBalance(REAL_WALLET_ADDRESS);
       if (typeof data.balance === 'number') {
+        const spent = resetSpent ? 0 : Number(localStorage.getItem('sipnip_spent') || 0);
+        const currentBalance = Math.max(0, data.balance - spent);
         setWallet((prev) => ({
           ...prev,
           address: REAL_WALLET_ADDRESS,
-          balance: data.balance,
+          balance: currentBalance,
         }));
       }
     } catch (err) {
@@ -129,8 +134,16 @@ export default function App() {
         { id: updated.id, summary: updated.summary, status: 'success', timestamp: 'Just now', txDigest: result.digest },
         ...prev,
       ]);
-      setWallet((prev) => ({ ...prev, balance: (prev.balance ?? 0) - (updated.amount ?? 0) }));
-      setTimeout(() => loadRealBalance(), 2000);
+
+      const amountSpent = updated.amount ?? 0;
+      const currentSpent = Number(localStorage.getItem('sipnip_spent') || 0);
+      const newSpent = currentSpent + amountSpent;
+      localStorage.setItem('sipnip_spent', newSpent.toString());
+
+      setWallet((prev) => ({
+        ...prev,
+        balance: Math.max(0, (prev.balance ?? 0) - amountSpent),
+      }));
     } else {
       setActiveAction({ ...activeAction, status: 'error', errorMessage: result.error });
     }
@@ -158,7 +171,7 @@ export default function App() {
             wallet={wallet}
             activity={activity}
             onOpenChat={() => setScreen('chat')}
-            onRefreshBalance={loadRealBalance}
+            onRefreshBalance={() => loadRealBalance(true)}
             balanceLoading={balanceLoading}
           />
         )}
