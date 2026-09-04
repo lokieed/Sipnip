@@ -20,6 +20,7 @@ export interface ProposedAction {
   status: ActionStatus;
   summary: string;        // e.g. "Send 5 SUI to Alice"
   recipient?: string;
+  recipientAddress?: string; // real 0x Sui address
   amount?: number;
   token?: string;         // e.g. "SUI"
   purpose?: string;

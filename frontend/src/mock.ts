@@ -9,6 +9,7 @@
 // ============================================================
 
 import type { ActivityItem, ProposedAction, WalletState } from './types';
+import { resolveRecipient } from './contacts';
 
 export const REAL_WALLET_ADDRESS =
   '0x5a74b232069d7114400321fb89116192f219a32d3849f233928157aac5afc7b3';
@@ -37,7 +38,7 @@ export const MOCK_ACTIVITY: ActivityItem[] = [
 ];
 
 // Fake "AI understands the request" — very simple keyword parsing
-// just so the demo works. Your teammate's real AI will replace this.
+// Fake "AI understands the request" — keyword fallback
 export function fakeParseIntent(userText: string): ProposedAction | null {
   const text = userText.toLowerCase();
   const amountMatch = text.match(/(\d+(\.\d+)?)\s*sui/);
@@ -45,12 +46,19 @@ export function fakeParseIntent(userText: string): ProposedAction | null {
 
   if (!amountMatch) return null;
 
+  const rawRecipient = toMatch ? capitalize(toMatch[1]) : 'Unknown';
+  const contact = resolveRecipient(rawRecipient);
+  const displayRecipient = contact
+    ? `${contact.name} (${contact.address.slice(0, 6)}...${contact.address.slice(-4)})`
+    : rawRecipient;
+
   return {
     id: `action-${Date.now()}`,
     type: 'send_payment',
     status: 'proposed',
-    summary: `Send ${amountMatch[1]} SUI to ${toMatch ? capitalize(toMatch[1]) : 'recipient'}`,
-    recipient: toMatch ? capitalize(toMatch[1]) : 'Unknown',
+    summary: `Send ${amountMatch[1]} SUI to ${displayRecipient}`,
+    recipient: displayRecipient,
+    recipientAddress: contact?.address,
     amount: parseFloat(amountMatch[1]),
     token: 'SUI',
     purpose: extractPurpose(text),

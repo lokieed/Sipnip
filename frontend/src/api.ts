@@ -6,6 +6,7 @@
 
 import type { ProposedAction } from './types';
 import { fakeExecuteOnSui, fakeParseIntent } from './mock';
+import { resolveRecipient } from './contacts';
 
 export interface BalanceResponse {
   balance: number;
@@ -83,9 +84,14 @@ export interface ExecutionResult {
  */
 export async function executeActionOnSui(action: ProposedAction): Promise<ExecutionResult> {
   try {
+    const targetAddress =
+      action.recipientAddress ||
+      (action.recipient?.startsWith('0x') ? action.recipient : undefined) ||
+      '0xaa0b19013228e2392e075ea7976db60957718c03a53af3073a54cad1c854bb8d';
+
     let payload: any = {
       action: 'prepareTransaction',
-      recipient: action.recipient || '0x5a74b232069d7114400321fb89116192f219a32d3849f233928157aac5afc7b3',
+      recipient: targetAddress,
       amount: action.amount || 1,
       purpose: action.purpose || action.summary,
     };
@@ -93,7 +99,7 @@ export async function executeActionOnSui(action: ProposedAction): Promise<Execut
     if (action.summary?.toLowerCase().includes('escrow') || action.type === 'stake') {
       payload = {
         action: 'createEscrow',
-        recipient: action.recipient || '0x5a74b232069d7114400321fb89116192f219a32d3849f233928157aac5afc7b3',
+        recipient: targetAddress,
         amount: action.amount || 1,
         description: action.purpose || action.summary,
       };
@@ -211,15 +217,26 @@ export async function parseIntentWithAI(
     const aiMessage = parsed.message || (actionData.action === 'clarification' ? actionData.question : 'Action ready for review.');
 
     // Map AI output to Member 1's ProposedAction
-    if (actionData.action === 'transfer') {
+    if (actionData.action === 'transfer' || actionData.action === 'create_escrow') {
+      const contact = resolveRecipient(actionData.recipient);
+      const recipientAddress = contact ? contact.address : actionData.recipient;
+      const displayRecipient = contact
+        ? `${contact.name} (${contact.address.slice(0, 6)}...${contact.address.slice(-4)})`
+        : actionData.recipient;
+
+      const aiReply = contact
+        ? `Found ${contact.name} (${contact.role}) in your contacts.\nPrepared transaction to ${contact.address.slice(0, 6)}...${contact.address.slice(-4)}.`
+        : aiMessage;
+
       return {
-        message: aiMessage,
+        message: aiReply,
         action: {
           id: `action-${Date.now()}`,
           type: 'send_payment',
           status: 'proposed',
-          summary: actionData.summary || `Send ${actionData.amount} ${actionData.token || 'SUI'} to ${actionData.recipient}`,
-          recipient: actionData.recipient,
+          summary: actionData.summary || `Send ${actionData.amount} ${actionData.token || 'SUI'} to ${displayRecipient}`,
+          recipient: displayRecipient,
+          recipientAddress: recipientAddress,
           amount: actionData.amount,
           token: actionData.token || 'SUI',
           purpose: actionData.purpose || 'Direct transfer',

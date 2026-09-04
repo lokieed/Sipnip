@@ -34,7 +34,24 @@ export function Review({
           </div>
 
           <div className="flex flex-col gap-3 pt-4 border-t border-[var(--color-border)]">
-            <Row label="To" value={action.recipient ?? '—'} />
+            <Row
+              label="To"
+              value={
+                <div className="flex flex-col items-end">
+                  <span className="font-medium">{action.recipient ?? '—'}</span>
+                  {action.recipientAddress && (
+                    <a
+                      href={`https://suiscan.xyz/testnet/account/${action.recipientAddress}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[11px] text-[var(--color-sui)] font-mono hover:underline mt-0.5"
+                    >
+                      Verify on Suiscan ↗
+                    </a>
+                  )}
+                </div>
+              }
+            />
             <Row label="Purpose" value={action.purpose ?? '—'} />
             <Row label="Network" value={<Badge tone="sui">{action.network}</Badge>} />
           </div>
