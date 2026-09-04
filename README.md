@@ -18,4 +18,4 @@ knowledge needed.
 - Frontend: React
 - AI: Google API
 - Blockchain: Sui Network
-- Storage: 
+- Storage: Sui Network (On Chain)
