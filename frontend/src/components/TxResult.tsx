@@ -44,9 +44,13 @@ export function TxResult({
         >
           <CheckCircle2 size={48} />
         </motion.div>
-        <div className="text-xl font-semibold mb-1">Transaction Completed</div>
+        <div className="text-xl font-semibold mb-1">
+          {action.type === 'escrow' ? 'Escrow Created' : 'Transaction Completed'}
+        </div>
         <div className="text-sm text-[var(--color-text-secondary)] mb-6">
-          {action.amount} SUI sent to {action.recipient}
+          {action.type === 'escrow'
+            ? `${action.amount} SUI locked in escrow for ${action.recipientAddress || action.recipient || 'the recipient'}`
+            : `${action.amount} SUI sent to ${action.recipient}`}
         </div>
 
         <Card layoutId="action-review-card" className="p-4 w-full max-w-sm mb-6 overflow-hidden text-left">
@@ -62,8 +66,17 @@ export function TxResult({
             </div>
           )}
 
+          {action.type === 'escrow' && action.escrowId && (
+            <div className="mb-3 pb-3 border-b border-[var(--color-border)]">
+              <div className="text-xs text-[var(--color-text-tertiary)] mb-1.5">Escrow Object ID</div>
+              <div className="text-xs font-mono break-all leading-relaxed bg-[var(--color-surface-2)]/60 p-2.5 rounded border border-[var(--color-border)]/50 select-all text-[var(--color-sui)]">
+                {action.escrowId}
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between text-xs text-[var(--color-text-tertiary)] mb-1.5">
-            <span>Recipient Address</span>
+            <span>{action.type === 'escrow' ? 'Escrow Recipient' : 'Recipient Address'}</span>
             <span className="text-[10px] text-[var(--color-sui)] font-mono">Sui Testnet</span>
           </div>
           <div className="text-xs font-mono break-all leading-relaxed bg-[var(--color-surface-2)]/60 p-2.5 rounded border border-[var(--color-border)]/50 select-all mb-3">

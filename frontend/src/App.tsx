@@ -10,7 +10,7 @@ import {
   useSignAndExecuteTransaction,
 } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
-import { REAL_WALLET_ADDRESS, fetchWalletBalance, parseIntentWithAI } from './api';
+import { REAL_WALLET_ADDRESS, executeActionOnSui, fetchWalletBalance, parseIntentWithAI } from './api';
 import { Chat } from './components/Chat';
 import { Dashboard } from './components/Dashboard';
 import { Landing } from './components/Landing';
@@ -212,6 +212,49 @@ export default function App() {
 
     setActiveAction({ ...activeAction, status: 'processing' });
     setScreen('result');
+
+    // Escrow has to be created by calling Nicole's deployed Move contract
+    // through the backend — it is NOT a plain wallet transfer, so it can't
+    // be signed directly in Slush the way transfer/swap/stake are for this
+    // demo. Route it separately.
+    if (activeAction.type === 'escrow') {
+      try {
+        const result = await executeActionOnSui(activeAction);
+        if (!result.success || !result.digest) {
+          throw new Error(result.error || 'Escrow creation failed on the server.');
+        }
+
+        const updated: ProposedAction = {
+          ...activeAction,
+          status: 'success',
+          txDigest: result.digest,
+          escrowId: result.escrowId,
+        };
+        setActiveAction(updated);
+        setActivity((prev) => [
+          {
+            id: updated.id,
+            summary: updated.summary,
+            status: 'success',
+            timestamp: 'Just now',
+            txDigest: result.digest,
+          },
+          ...prev,
+        ]);
+
+        setTimeout(() => {
+          loadRealBalance(true, currentAccount.address);
+        }, 2000);
+      } catch (err: any) {
+        console.error('Escrow execution error:', err);
+        setActiveAction({
+          ...activeAction,
+          status: 'error',
+          errorMessage: err?.message || 'Escrow creation failed on Sui Testnet.',
+        });
+      }
+      return;
+    }
 
     try {
       let txDigest: string | undefined;
