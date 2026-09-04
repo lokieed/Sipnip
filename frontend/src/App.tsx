@@ -13,10 +13,12 @@ type Screen = 'landing' | 'dashboard' | 'chat' | 'review' | 'result';
 
 export default function App() {
   const [wallet, setWallet] = useState<WalletState>(() => {
+    const savedBalance = localStorage.getItem('sipnip_balance');
+    const savedConnected = localStorage.getItem('sipnip_connected') === 'true';
     return {
-      connected: false,
+      connected: savedConnected,
       address: REAL_WALLET_ADDRESS,
-      balance: undefined, // Fetched live from Sui blockchain
+      balance: savedBalance ? parseFloat(savedBalance) : undefined,
     };
   });
 
@@ -25,7 +27,11 @@ export default function App() {
     return saved ? JSON.parse(saved) : MOCK_ACTIVITY;
   });
 
-  const [screen, setScreen] = useState<Screen>('landing');
+  const [screen, setScreen] = useState<Screen>(() => {
+    const savedConnected = localStorage.getItem('sipnip_connected') === 'true';
+    return savedConnected ? 'dashboard' : 'landing';
+  });
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [aiThinking, setAiThinking] = useState(false);
   const [activeAction, setActiveAction] = useState<ProposedAction | null>(null);
@@ -37,7 +43,7 @@ export default function App() {
     localStorage.setItem('sipnip_activity', JSON.stringify(activity));
   }, [activity]);
 
-  // Always fetch real on-chain balance on initial mount
+  // Always fetch real on-chain balance on initial mount if not already cached
   useEffect(() => {
     loadRealBalance();
   }, []);
@@ -45,30 +51,33 @@ export default function App() {
   // ---- Wallet connect ----
   const connectWallet = () => {
     setConnecting(true);
-    loadRealBalance();
+    localStorage.setItem('sipnip_connected', 'true');
     setTimeout(() => {
       setWallet((prev) => ({ ...prev, connected: true, address: REAL_WALLET_ADDRESS }));
       setConnecting(false);
       setScreen('dashboard');
-    }, 800);
+      loadRealBalance();
+    }, 600);
   };
 
   // ---- Fetch the 100% REAL balance directly from Sui Blockchain ----
-  const loadRealBalance = async (resetSpent = false) => {
+  const loadRealBalance = async (forceReset = false) => {
     setBalanceLoading(true);
     try {
-      if (resetSpent) {
+      if (forceReset) {
         localStorage.removeItem('sipnip_spent');
+        localStorage.removeItem('sipnip_balance');
       }
       const data = await fetchWalletBalance(REAL_WALLET_ADDRESS);
       if (typeof data.balance === 'number') {
-        const spent = resetSpent ? 0 : Number(localStorage.getItem('sipnip_spent') || 0);
+        const spent = forceReset ? 0 : Number(localStorage.getItem('sipnip_spent') || 0);
         const currentBalance = Math.max(0, data.balance - spent);
         setWallet((prev) => ({
           ...prev,
           address: REAL_WALLET_ADDRESS,
           balance: currentBalance,
         }));
+        localStorage.setItem('sipnip_balance', currentBalance.toString());
       }
     } catch (err) {
       console.error('Could not load real on-chain balance:', err);
@@ -140,10 +149,14 @@ export default function App() {
       const newSpent = currentSpent + amountSpent;
       localStorage.setItem('sipnip_spent', newSpent.toString());
 
-      setWallet((prev) => ({
-        ...prev,
-        balance: Math.max(0, (prev.balance ?? 0) - amountSpent),
-      }));
+      setWallet((prev) => {
+        const newBal = Math.max(0, (prev.balance ?? 0) - amountSpent);
+        localStorage.setItem('sipnip_balance', newBal.toString());
+        return {
+          ...prev,
+          balance: newBal,
+        };
+      });
     } else {
       setActiveAction({ ...activeAction, status: 'error', errorMessage: result.error });
     }
