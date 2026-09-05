@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import {
   ConnectModal,
   useCurrentAccount,
@@ -359,45 +359,99 @@ export default function App() {
   // ---- Render with fluid screen transitions ----
   return (
     <>
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={screen}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.16, ease: 'easeInOut' }}
-          className="w-full min-h-screen"
-        >
-          {screen === 'landing' && <Landing onConnect={connectWallet} connecting={connecting} />}
-          {screen === 'dashboard' && (
-            <Dashboard
-              wallet={wallet}
-              activity={activity}
-              onOpenChat={() => setScreen('chat')}
-              onRefreshBalance={() => loadRealBalance(true)}
-              onDisconnect={handleDisconnect}
-              onConnectWallet={connectWallet}
-              walletName={activeWalletName}
-              balanceLoading={balanceLoading}
-            />
-          )}
-          {screen === 'chat' && (
-            <Chat
-              messages={messages}
-              onSend={handleSend}
-              onReviewAction={handleReviewAction}
-              onBack={() => setScreen('dashboard')}
-              aiThinking={aiThinking}
-            />
-          )}
-          {screen === 'review' && activeAction && (
-            <Review action={activeAction} onConfirm={handleConfirm} onCancel={() => setScreen('chat')} />
-          )}
-          {screen === 'result' && activeAction && (
-            <TxResult action={activeAction} onDone={backToDashboard} onRetry={handleConfirm} />
-          )}
-        </motion.div>
-      </AnimatePresence>
+      <LayoutGroup id="sipnip-geometric-morph">
+        <div className="w-full min-h-screen relative overflow-x-hidden bg-[var(--color-bg)]">
+          <AnimatePresence initial={false}>
+            {screen === 'landing' && (
+              <motion.div
+                key="landing"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="w-full min-h-screen"
+              >
+                <Landing onConnect={connectWallet} connecting={connecting} />
+              </motion.div>
+            )}
+
+            {screen === 'dashboard' && (
+              <motion.div
+                key="dashboard"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="w-full min-h-screen"
+              >
+                <Dashboard
+                  wallet={wallet}
+                  activity={activity}
+                  onOpenChat={() => setScreen('chat')}
+                  onRefreshBalance={() => loadRealBalance(true)}
+                  onDisconnect={handleDisconnect}
+                  onConnectWallet={connectWallet}
+                  walletName={activeWalletName}
+                  balanceLoading={balanceLoading}
+                />
+              </motion.div>
+            )}
+
+            {screen === 'chat' && (
+              <motion.div
+                key="chat"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="w-full min-h-screen flex items-center justify-center sm:py-6 sm:px-4"
+              >
+                <Chat
+                  messages={messages}
+                  onSend={handleSend}
+                  onReviewAction={handleReviewAction}
+                  onBack={() => setScreen('dashboard')}
+                  aiThinking={aiThinking}
+                />
+              </motion.div>
+            )}
+
+            {screen === 'review' && activeAction && (
+              <motion.div
+                key="review"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="w-full min-h-screen flex items-center justify-center p-4"
+              >
+                <Review
+                  action={activeAction}
+                  onConfirm={handleConfirm}
+                  onCancel={() => setScreen('chat')}
+                />
+              </motion.div>
+            )}
+
+            {screen === 'result' && activeAction && (
+              <motion.div
+                key="result"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="w-full min-h-screen flex items-center justify-center p-4"
+              >
+                <TxResult
+                  action={activeAction}
+                  onDone={backToDashboard}
+                  onRetry={handleConfirm}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </LayoutGroup>
 
       <ConnectModal
         trigger={<button className="hidden" aria-hidden="true" tabIndex={-1} />}

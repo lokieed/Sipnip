@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, Send, Sparkles } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { ChatMessage } from '../types';
-import { Badge, Button, Card } from './ui';
+import { Badge, Button, Card, GEOMETRIC_SPRING } from './ui';
 
 export function Chat({
   messages,
@@ -40,11 +40,12 @@ export function Chat({
   return (
     <motion.div
       layoutId="chat-morph-shell"
-      transition={{ type: 'spring', stiffness: 350, damping: 32 }}
-      className="h-[100dvh] flex flex-col max-w-2xl mx-auto w-full bg-[var(--color-bg)] rounded-[var(--radius-lg)] overflow-hidden"
+      layout
+      transition={GEOMETRIC_SPRING}
+      className="h-[100dvh] sm:h-[88vh] sm:max-h-[850px] flex flex-col max-w-2xl mx-auto w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-none sm:rounded-[var(--radius-lg)] overflow-hidden shadow-2xl relative"
     >
       {/* Sticky Header with responsive padding and blur */}
-      <header className="sticky top-0 z-10 flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[var(--color-border)] backdrop-blur-md bg-[var(--color-bg)]/80 transition-colors">
+      <header className="sticky top-0 z-10 flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[var(--color-border)] backdrop-blur-md bg-[var(--color-surface)]/90 transition-colors">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}

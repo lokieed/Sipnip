@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { ArrowLeft, ShieldCheck } from 'lucide-react';
 import type { ProposedAction } from '../types';
 import { Badge, Button, Card } from './ui';
@@ -13,21 +12,20 @@ export function Review({
   onCancel: () => void;
 }) {
   return (
-    <div className="min-h-screen flex flex-col max-w-md mx-auto px-6 py-8">
+    <div className="min-h-screen flex flex-col justify-center max-w-md mx-auto px-6 py-8 w-full">
       <button
         onClick={onCancel}
-        className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] hover:text-white mb-8 self-start transition-colors"
+        className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] hover:text-white mb-6 self-start transition-colors"
       >
         <ArrowLeft size={16} /> Back to chat
       </button>
 
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-        <div className="flex items-center gap-2 mb-6">
-          <ShieldCheck size={16} className="text-[var(--color-sui)]" />
-          <span className="text-sm font-medium text-[var(--color-text-secondary)]">Review before confirming</span>
-        </div>
+      <div className="flex items-center gap-2 mb-4">
+        <ShieldCheck size={16} className="text-[var(--color-sui)]" />
+        <span className="text-sm font-medium text-[var(--color-text-secondary)]">Review before confirming</span>
+      </div>
 
-        <Card layoutId="action-review-card" className="p-6 mb-6" glow="sui">
+      <Card layoutId="action-review-card" className="p-6 mb-6" glow="sui">
           <div className="text-center mb-6">
             <div className="text-xs text-[var(--color-text-tertiary)] mb-1">Amount</div>
             <div className="text-4xl font-bold font-mono">{action.amount} <span className="text-2xl text-[var(--color-text-tertiary)]">SUI</span></div>
@@ -70,7 +68,6 @@ export function Review({
             Cancel
           </Button>
         </div>
-      </motion.div>
     </div>
   );
 }

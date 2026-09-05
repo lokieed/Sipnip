@@ -2,7 +2,18 @@ import { motion } from 'framer-motion';
 import type { ReactNode } from 'react';
 
 // ============================================================
-// Button (with Morphing Spring Physics & Hover/Tap feedback)
+// GEOMETRIC SPRING PHYSICS (Apple-like Fluid Transition)
+// Critically damped (ratio ~0.95), zero overshoot, zero jelly
+// ============================================================
+export const GEOMETRIC_SPRING = {
+  type: 'spring' as const,
+  stiffness: 400,
+  damping: 38,
+  mass: 1,
+};
+
+// ============================================================
+// Button (with Fluid Physics & Hover/Tap feedback)
 // ============================================================
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
@@ -37,9 +48,9 @@ export function Button({
 
   return (
     <motion.button
-      whileHover={disabled ? undefined : { scale: 1.012 }}
-      whileTap={disabled ? undefined : { scale: 0.97 }}
-      transition={{ type: 'spring', stiffness: 450, damping: 28 }}
+      whileHover={disabled ? undefined : { scale: 1.01 }}
+      whileTap={disabled ? undefined : { scale: 0.98 }}
+      transition={GEOMETRIC_SPRING}
       onClick={onClick}
       disabled={disabled}
       className={`${base} ${variants[variant]} ${fullWidth ? 'w-full' : ''}`}
@@ -51,7 +62,7 @@ export function Button({
 }
 
 // ============================================================
-// Card (with PowerPoint-style Shared Layout Morphing)
+// Card (with Controlled Geometric Shared Layout Morphing)
 // ============================================================
 export function Card({
   children,
@@ -59,12 +70,14 @@ export function Card({
   glow,
   layoutId,
   onClick,
+  style,
 }: {
   children: ReactNode;
   className?: string;
   glow?: 'ai' | 'sui';
   layoutId?: string;
   onClick?: () => void;
+  style?: React.CSSProperties;
 }) {
   const glowStyle =
     glow === 'ai'
@@ -76,10 +89,11 @@ export function Card({
   return (
     <motion.div
       layoutId={layoutId}
+      layout={layoutId ? true : undefined}
       onClick={onClick}
-      transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-      className={`bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-lg)] ${className}`}
-      style={glowStyle}
+      transition={GEOMETRIC_SPRING}
+      className={`bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-lg)] overflow-hidden ${className}`}
+      style={{ ...glowStyle, ...style }}
     >
       {children}
     </motion.div>
