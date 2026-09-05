@@ -9,6 +9,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import type { ActivityItem, WalletState } from '../types';
+import { TypewriterText } from './Typewriter';
 import { Badge, Button, Card, GEOMETRIC_SPRING, StatusDot } from './ui';
 
 export function Dashboard({
@@ -135,9 +136,24 @@ export function Dashboard({
                 className="absolute inset-0 h-full p-4 flex items-center justify-between cursor-pointer border-2 border-white/20 hover:border-white/40 rounded-2xl shadow-lg bg-[var(--color-surface)] overflow-hidden select-none"
                 onClick={onOpenChat}
               >
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2.5 min-w-0 pr-3">
                   <StatusDot tone="success" />
-                  <span className="text-sm font-medium text-[var(--color-text-secondary)]">AI agent ready</span>
+                  <div className="text-xs sm:text-sm text-[var(--color-text-secondary)] truncate">
+                    <span className="text-[var(--color-text-tertiary)] mr-1">Ask:</span>
+                    <TypewriterText
+                      words={[
+                        'Send 1 SUI to Nathan',
+                        'Lock 2 SUI in escrow for design',
+                        'Transfer 0.05 SUI on Testnet',
+                        'Release escrow to Alice',
+                        'Check my Sui balance',
+                      ]}
+                      className="text-white font-medium"
+                      typingSpeed={75}
+                      deletingSpeed={25}
+                      pauseTime={1800}
+                    />
+                  </div>
                 </div>
                 <Button variant="secondary" onClick={onOpenChat} icon={<MessageSquare size={14} />}>
                   Ask AI

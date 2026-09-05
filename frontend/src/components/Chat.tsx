@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, Send, Sparkles } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { ChatMessage, ProposedAction } from '../types';
+import { TypewriterText } from './Typewriter';
 import { Badge, Button, GEOMETRIC_SPRING } from './ui';
 
 export function Chat({
@@ -187,20 +188,38 @@ export function Chat({
           }}
           className="flex items-center gap-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] px-3 sm:px-3.5 py-2 sm:py-2.5 focus-within:border-[var(--color-border-hover)] focus-within:ring-1 focus-within:ring-[var(--color-border-hover)] transition-all shadow-xs"
         >
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your request in plain English..."
-            disabled={aiThinking}
-            className="flex-1 bg-transparent text-xs sm:text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] outline-none min-w-0"
-          />
+          <div className="relative flex-1 flex items-center min-w-0">
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              disabled={aiThinking}
+              className="w-full bg-transparent text-xs sm:text-sm text-[var(--color-text-primary)] outline-none min-w-0 z-10"
+            />
+            {!input && (
+              <div className="absolute inset-0 flex items-center pointer-events-none text-xs sm:text-sm text-[var(--color-text-tertiary)] truncate select-none">
+                <TypewriterText
+                  words={[
+                    'Send 1 SUI to Nathan for frontend work',
+                    'Lock 2 SUI in escrow for website design',
+                    'Transfer 0.05 SUI to 0xaa0b190...bb8d',
+                    'Release escrow payment to Ahmad',
+                    'Check my wallet balance on Sui Testnet',
+                    'Swap 10 SUI to USDC on Sui',
+                  ]}
+                  typingSpeed={75}
+                  deletingSpeed={25}
+                  pauseTime={1800}
+                />
+              </div>
+            )}
+          </div>
           <button
             type="submit"
             disabled={!input.trim() || aiThinking}
             aria-label="Send message"
-            className="p-1.5 rounded-md text-[var(--color-text-secondary)] hover:text-white hover:bg-white/5 active:scale-95 disabled:opacity-30 disabled:hover:bg-transparent disabled:active:scale-100 transition-all shrink-0"
+            className="p-1.5 rounded-md text-[var(--color-text-secondary)] hover:text-white hover:bg-white/5 active:scale-95 disabled:opacity-30 disabled:hover:bg-transparent disabled:active:scale-100 transition-all shrink-0 z-20"
           >
             <Send size={15} />
           </button>

@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, Loader2, Sparkles } from 'lucide-react';
+import { TypewriterText } from './Typewriter';
 import { Button } from './ui';
 
 export function Landing({
@@ -34,10 +35,28 @@ export function Landing({
           <span className="text-[var(--color-text-secondary)]">Sui handles the rest.</span>
         </h1>
 
-        <p className="text-[var(--color-text-secondary)] text-base leading-relaxed mb-9 max-w-md">
+        <p className="text-[var(--color-text-secondary)] text-base leading-relaxed mb-6 max-w-md">
           Ask in plain English. Your AI agent prepares the transaction, you approve it,
           and it settles on Sui — instantly, and always with your confirmation.
         </p>
+
+        {/* Interactive Typewriter Prompt Preview */}
+        <div className="w-full max-w-sm px-4 py-2.5 mb-7 rounded-full border border-white/10 bg-[var(--color-surface)]/80 backdrop-blur-sm text-xs text-[var(--color-text-secondary)] flex items-center gap-2 shadow-inner select-none">
+          <span className="text-[var(--color-sui)] font-mono font-bold">&gt;</span>
+          <TypewriterText
+            words={[
+              'Send 5 SUI to Ahmad for design work',
+              'Lock 10 SUI into escrow for website logo',
+              'Transfer 1 SUI to 0xaa0b...bb8d',
+              'Release escrow payment to Nicole',
+              'Check on-chain balances on Sui',
+            ]}
+            className="text-white font-mono truncate"
+            typingSpeed={75}
+            deletingSpeed={25}
+            pauseTime={1800}
+          />
+        </div>
 
         {/* Connect Wallet Card Container with Spring & Geometric Card Animation */}
         <motion.div
