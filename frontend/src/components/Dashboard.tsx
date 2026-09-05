@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { LogOut, MessageSquare, RefreshCw, Wallet } from 'lucide-react';
+import { ArrowUpRight, LogOut, MessageSquare, RefreshCw, Wallet } from 'lucide-react';
 import type { ActivityItem, WalletState } from '../types';
 import { Badge, Button, Card, GEOMETRIC_SPRING, StatusDot } from './ui';
 
@@ -15,6 +15,8 @@ export function Dashboard({
   balanceLoading = false,
   onRefreshActivity,
   activityLoading = false,
+  onOpenAllActivity,
+  isActivityOpen = false,
 }: {
   wallet: WalletState;
   activity: ActivityItem[];
@@ -27,6 +29,8 @@ export function Dashboard({
   isChatOpen?: boolean;
   balanceLoading?: boolean;
   activityLoading?: boolean;
+  onOpenAllActivity?: () => void;
+  isActivityOpen?: boolean;
 }) {
   const isConnected = wallet.connected && !!wallet.address;
   const shortAddress = wallet.address
@@ -150,7 +154,18 @@ export function Dashboard({
               </button>
             )}
           </div>
-          <span className="text-[11px] text-[var(--color-text-tertiary)]">Live on Sui</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-[var(--color-text-tertiary)]">Live on Sui</span>
+            {onOpenAllActivity && activity.length > 0 && (
+              <button
+                onClick={onOpenAllActivity}
+                className="text-xs text-[var(--color-sui)] hover:text-white transition-colors font-medium flex items-center gap-0.5 cursor-pointer ml-1"
+              >
+                <span>View all</span>
+                <ArrowUpRight size={13} />
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -159,7 +174,7 @@ export function Dashboard({
               No activity yet — try asking the AI to do something.
             </Card>
           )}
-          {activity.map((item) => (
+          {activity.slice(0, 4).map((item) => (
             <Card
               key={item.id}
               className={`p-4 flex items-center justify-between transition-all ${item.txDigest ? 'hover:border-[var(--color-border-hover)] cursor-pointer group' : ''}`}
@@ -193,6 +208,31 @@ export function Dashboard({
               </Badge>
             </Card>
           ))}
+
+          {/* Morphing "View all transactions" trigger card */}
+          {onOpenAllActivity && activity.length > 0 && (
+            <div className="relative mt-1">
+              <div className="h-[42px] w-full rounded-xl border border-dashed border-white/10 opacity-20 pointer-events-none" />
+              <AnimatePresence>
+                {!isActivityOpen && (
+                  <motion.button
+                    key="dashboard-view-all-btn"
+                    layoutId="activity-modal-shell"
+                    layout
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={GEOMETRIC_SPRING}
+                    onClick={onOpenAllActivity}
+                    className="absolute inset-0 h-full w-full py-2.5 px-4 rounded-xl border border-white/10 hover:border-white/25 bg-[var(--color-surface)] hover:bg-[var(--color-surface-2)] text-xs font-medium text-[var(--color-text-secondary)] hover:text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-sm select-none"
+                  >
+                    <span>View all transactions on Sui ({activity.length})</span>
+                    <ArrowUpRight size={13} className="text-[var(--color-sui)]" />
+                  </motion.button>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
         </div>
       </div>
 

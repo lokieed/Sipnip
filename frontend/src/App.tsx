@@ -17,6 +17,7 @@ import {
   fetchWalletBalance,
   parseIntentWithAI,
 } from './api';
+import { ActivityModal } from './components/ActivityModal';
 import { Chat } from './components/Chat';
 import { Dashboard } from './components/Dashboard';
 import { Landing } from './components/Landing';
@@ -25,7 +26,7 @@ import { TxResult } from './components/TxResult';
 import { MOCK_ACTIVITY } from './mock';
 import type { ActivityItem, ChatMessage, ProposedAction, WalletState } from './types';
 
-type Screen = 'landing' | 'dashboard' | 'chat' | 'review' | 'result';
+type Screen = 'landing' | 'dashboard' | 'chat' | 'review' | 'result' | 'activity';
 
 export default function App() {
   const currentAccount = useCurrentAccount();
@@ -178,7 +179,7 @@ export default function App() {
     const addressToQuery = targetAddress || currentAccount?.address || wallet.address || REAL_WALLET_ADDRESS;
     setActivityLoading(true);
     try {
-      const onChainTxs = await fetchRecentTransactions(addressToQuery, 8);
+      const onChainTxs = await fetchRecentTransactions(addressToQuery, 20);
       if (onChainTxs.length > 0) {
         setActivity(onChainTxs);
       }
@@ -436,6 +437,8 @@ export default function App() {
                   walletName={activeWalletName}
                   balanceLoading={balanceLoading}
                   isChatOpen={screen !== 'dashboard'}
+                  onOpenAllActivity={() => setScreen('activity')}
+                  isActivityOpen={screen === 'activity'}
                 />
               </motion.div>
 
@@ -443,14 +446,14 @@ export default function App() {
               <AnimatePresence>
                 {screen !== 'dashboard' && (
                   <motion.div
-                    key="chat-backdrop"
+                    key="modal-backdrop"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.22 }}
                     className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm pointer-events-auto"
                     onClick={() => {
-                      if (screen === 'chat') setScreen('dashboard');
+                      if (screen === 'chat' || screen === 'activity') setScreen('dashboard');
                     }}
                   />
                 )}
@@ -468,6 +471,21 @@ export default function App() {
                       aiThinking={aiThinking}
                       activeActionId={activeAction?.id}
                       isReviewOpen={screen === 'review' || screen === 'result'}
+                    />
+                  </div>
+                )}
+              </AnimatePresence>
+
+              {/* All Activity Modal Morph Overlay */}
+              <AnimatePresence>
+                {screen === 'activity' && (
+                  <div className="fixed inset-0 z-40 flex items-center justify-center p-2 sm:p-4 pointer-events-none">
+                    <ActivityModal
+                      activity={activity}
+                      onBack={() => setScreen('dashboard')}
+                      onRefresh={() => loadRealActivity()}
+                      loading={activityLoading}
+                      walletAddress={wallet.address}
                     />
                   </div>
                 )}
