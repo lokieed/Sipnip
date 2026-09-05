@@ -1,5 +1,13 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowUpRight, LogOut, MessageSquare, RefreshCw, Wallet } from 'lucide-react';
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Lock,
+  LogOut,
+  MessageSquare,
+  RefreshCw,
+  Wallet,
+} from 'lucide-react';
 import type { ActivityItem, WalletState } from '../types';
 import { Badge, Button, Card, GEOMETRIC_SPRING, StatusDot } from './ui';
 
@@ -139,100 +147,110 @@ export function Dashboard({
           </AnimatePresence>
         </div>
 
-        {/* Activity */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-medium text-[var(--color-text-secondary)]">Recent Activity</h2>
-            {onRefreshActivity && (
-              <button
-                onClick={onRefreshActivity}
-                disabled={activityLoading}
-                title="Sync recent transactions from Sui Testnet"
-                className="text-[var(--color-text-tertiary)] hover:text-white transition-colors p-1 -m-1 rounded cursor-pointer"
-              >
-                <RefreshCw size={12} className={activityLoading ? 'animate-spin' : ''} />
-              </button>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] text-[var(--color-text-tertiary)]">Live on Sui</span>
-            {onOpenAllActivity && activity.length > 0 && (
-              <button
+        {/* Sectioned Recent Activity Card — shape morphs into full Activity modal */}
+        <div className="relative mb-6">
+          {/* Static coordinate placeholder to preserve dashboard layout seamlessly */}
+          <div className="w-full rounded-2xl border-2 border-dashed border-white/10 opacity-30 pointer-events-none min-h-[285px]" />
+          <AnimatePresence>
+            {!isActivityOpen && (
+              <motion.div
+                key="dashboard-activity-card"
+                layoutId="activity-modal-shell"
+                layout
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={GEOMETRIC_SPRING}
+                className="absolute inset-0 w-full h-full p-5 flex flex-col justify-between cursor-pointer border-2 border-white/20 hover:border-white/40 rounded-2xl shadow-lg bg-[var(--color-surface)] overflow-hidden select-none group"
                 onClick={onOpenAllActivity}
-                className="text-xs text-[var(--color-sui)] hover:text-white transition-colors font-medium flex items-center gap-0.5 cursor-pointer ml-1"
               >
-                <span>View all</span>
-                <ArrowUpRight size={13} />
-              </button>
+                <motion.div layout="position" className="w-full flex-1 flex flex-col justify-between">
+                  {/* Card Header */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3.5">
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-sm font-semibold text-white">Recent Activity</h2>
+                        {onRefreshActivity && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onRefreshActivity();
+                            }}
+                            disabled={activityLoading}
+                            title="Sync recent transactions from Sui Testnet"
+                            className="text-[var(--color-text-tertiary)] hover:text-white transition-colors p-1 -m-1 rounded cursor-pointer"
+                          >
+                            <RefreshCw size={12} className={activityLoading ? 'animate-spin' : ''} />
+                          </button>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-[var(--color-text-tertiary)]">Live on Sui</span>
+                        <span className="text-xs text-[var(--color-sui)] group-hover:underline flex items-center gap-0.5 font-medium">
+                          View all <ArrowUpRight size={13} />
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Preview list (Top 3 items) */}
+                    <div className="space-y-2">
+                      {activity.length === 0 ? (
+                        <div className="py-8 text-center text-xs text-[var(--color-text-tertiary)] bg-white/[0.02] rounded-xl border border-white/5">
+                          No activity yet — try asking the AI to send SUI.
+                        </div>
+                      ) : (
+                        activity.slice(0, 3).map((item) => {
+                          const isReceived = item.summary.toLowerCase().includes('received');
+                          const isEscrow = item.summary.toLowerCase().includes('escrow');
+                          return (
+                            <div
+                              key={item.id}
+                              className="flex items-center justify-between py-2 px-3 rounded-xl bg-white/[0.03] group-hover:bg-white/[0.06] border border-white/5 transition-colors"
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <div
+                                  className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
+                                    isReceived
+                                      ? 'bg-emerald-500/15 text-emerald-400'
+                                      : isEscrow
+                                      ? 'bg-purple-500/15 text-purple-400'
+                                      : 'bg-[var(--color-sui)]/15 text-[var(--color-sui)]'
+                                  }`}
+                                >
+                                  {isReceived ? (
+                                    <ArrowDownLeft size={13} />
+                                  ) : isEscrow ? (
+                                    <Lock size={12} />
+                                  ) : (
+                                    <ArrowUpRight size={13} />
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="text-xs font-medium text-white truncate">{item.summary}</div>
+                                  <div className="text-[10px] text-[var(--color-text-tertiary)] font-mono">{item.timestamp}</div>
+                                </div>
+                              </div>
+                              <Badge tone={item.status === 'success' ? 'success' : item.status === 'error' ? 'danger' : 'neutral'}>
+                                {item.status}
+                              </Badge>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Card Bottom / Footer hint */}
+                  <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs text-[var(--color-text-tertiary)] mt-3">
+                    <span className="font-mono text-[11px]">{activity.length} on-chain transactions</span>
+                    <span className="text-[var(--color-sui)] group-hover:translate-x-0.5 transition-transform flex items-center gap-1 font-medium text-[11px]">
+                      Open Full Explorer <ArrowUpRight size={12} />
+                    </span>
+                  </div>
+                </motion.div>
+              </motion.div>
             )}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          {activity.length === 0 && (
-            <Card className="p-6 text-center text-sm text-[var(--color-text-tertiary)]">
-              No activity yet — try asking the AI to do something.
-            </Card>
-          )}
-          {activity.slice(0, 4).map((item) => (
-            <Card
-              key={item.id}
-              className={`p-4 flex items-center justify-between transition-all ${item.txDigest ? 'hover:border-[var(--color-border-hover)] cursor-pointer group' : ''}`}
-              onClick={() => {
-                if (item.txDigest) {
-                  const hash = item.txDigest.startsWith('0x') ? item.txDigest : item.txDigest;
-                  window.open(`https://suiscan.xyz/testnet/tx/${hash}`, '_blank');
-                }
-              }}
-            >
-              <div>
-                <div className="text-sm font-medium flex items-center gap-2">
-                  <span>{item.summary}</span>
-                  {item.txDigest && (
-                    <span className="text-[10px] text-[var(--color-sui)] font-mono group-hover:underline">
-                      Suiscan ↗
-                    </span>
-                  )}
-                </div>
-                <div className="text-xs text-[var(--color-text-tertiary)] mt-0.5 flex items-center gap-2">
-                  <span>{item.timestamp}</span>
-                  {item.txDigest && (
-                    <span className="font-mono text-[11px] text-[var(--color-text-tertiary)]">
-                      {item.txDigest.length > 16 ? `${item.txDigest.slice(0, 10)}...` : item.txDigest}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <Badge tone={item.status === 'success' ? 'success' : item.status === 'error' ? 'danger' : 'neutral'}>
-                {item.status}
-              </Badge>
-            </Card>
-          ))}
-
-          {/* Morphing "View all transactions" trigger card */}
-          {onOpenAllActivity && activity.length > 0 && (
-            <div className="relative mt-1">
-              <div className="h-[42px] w-full rounded-xl border border-dashed border-white/10 opacity-20 pointer-events-none" />
-              <AnimatePresence>
-                {!isActivityOpen && (
-                  <motion.button
-                    key="dashboard-view-all-btn"
-                    layoutId="activity-modal-shell"
-                    layout
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={GEOMETRIC_SPRING}
-                    onClick={onOpenAllActivity}
-                    className="absolute inset-0 h-full w-full py-2.5 px-4 rounded-xl border border-white/10 hover:border-white/25 bg-[var(--color-surface)] hover:bg-[var(--color-surface-2)] text-xs font-medium text-[var(--color-text-secondary)] hover:text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-sm select-none"
-                  >
-                    <span>View all transactions on Sui ({activity.length})</span>
-                    <ArrowUpRight size={13} className="text-[var(--color-sui)]" />
-                  </motion.button>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
+          </AnimatePresence>
         </div>
       </div>
 

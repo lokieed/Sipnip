@@ -60,8 +60,9 @@ export function ActivityModal({
       transition={GEOMETRIC_SPRING}
       className="h-[92dvh] sm:h-[84vh] sm:max-h-[780px] flex flex-col max-w-2xl mx-auto w-full bg-[var(--color-surface)] border-2 border-white/20 rounded-2xl overflow-hidden shadow-2xl relative pointer-events-auto select-none"
     >
-      {/* Sticky Header */}
-      <header className="sticky top-0 z-10 flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[var(--color-border)] backdrop-blur-md bg-[var(--color-surface)]/95">
+      <motion.div layout="position" className="flex-1 flex flex-col min-h-0 w-full">
+        {/* Sticky Header */}
+        <header className="sticky top-0 z-10 flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[var(--color-border)] backdrop-blur-md bg-[var(--color-surface)]/95">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -228,19 +229,20 @@ export function ActivityModal({
         )}
       </div>
 
-      {/* Footer */}
-      <footer className="px-4 sm:px-6 py-3 border-t border-[var(--color-border)] bg-[var(--color-surface-2)]/80 flex items-center justify-between text-xs text-[var(--color-text-tertiary)]">
-        <div className="flex items-center gap-1.5">
-          <Layers size={13} className="text-[var(--color-sui)]" />
-          <span>Synced directly with Sui Testnet GraphQL RPC</span>
-        </div>
-        <button
-          onClick={onBack}
-          className="text-white hover:text-[var(--color-sui)] transition-colors font-medium cursor-pointer"
-        >
-          Close
-        </button>
-      </footer>
+        {/* Footer */}
+        <footer className="px-4 sm:px-6 py-3 border-t border-[var(--color-border)] bg-[var(--color-surface-2)]/80 flex items-center justify-between text-xs text-[var(--color-text-tertiary)]">
+          <div className="flex items-center gap-1.5">
+            <Layers size={13} className="text-[var(--color-sui)]" />
+            <span>Synced directly with Sui Testnet GraphQL RPC</span>
+          </div>
+          <button
+            onClick={onBack}
+            className="text-white hover:text-[var(--color-sui)] transition-colors font-medium cursor-pointer"
+          >
+            Close
+          </button>
+        </footer>
+      </motion.div>
     </motion.div>
   );
 }
