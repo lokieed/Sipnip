@@ -51,11 +51,21 @@ export default function App() {
     return savedConnected ? 'dashboard' : 'landing';
   });
 
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    const saved = localStorage.getItem('sipnip_chat_messages');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [aiThinking, setAiThinking] = useState(false);
   const [activeAction, setActiveAction] = useState<ProposedAction | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [balanceLoading, setBalanceLoading] = useState(false);
+
+  // Sync messages
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem('sipnip_chat_messages', JSON.stringify(messages));
+    }
+  }, [messages]);
 
   // Sync activity history
   useEffect(() => {
@@ -231,6 +241,11 @@ export default function App() {
           escrowId: result.escrowId,
         };
         setActiveAction(updated);
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.action?.id === updated.id ? { ...msg, action: updated } : msg
+          )
+        );
         setActivity((prev) => [
           {
             id: updated.id,
@@ -318,6 +333,11 @@ export default function App() {
         txDigest,
       };
       setActiveAction(updated);
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.action?.id === updated.id ? { ...msg, action: updated } : msg
+        )
+      );
       setActivity((prev) => [
         {
           id: updated.id,
@@ -349,8 +369,10 @@ export default function App() {
   };
 
   const backToDashboard = () => {
-    setActiveAction(null);
     setScreen('dashboard');
+    setTimeout(() => {
+      setActiveAction(null);
+    }, 400);
   };
 
   const activeWalletName =
@@ -409,40 +431,49 @@ export default function App() {
               {/* Chat Window Morph Overlay */}
               <AnimatePresence>
                 {(screen === 'chat' || screen === 'review' || screen === 'result') && (
-                  <div className="fixed inset-0 z-40 flex items-center justify-center p-2 sm:p-4 pointer-events-none">
+                  <motion.div
+                    key="chat-morph-overlay"
+                    className="fixed inset-0 z-40 flex items-center justify-center p-2 sm:p-4 pointer-events-none"
+                  >
                     <Chat
                       messages={messages}
                       onSend={handleSend}
                       onReviewAction={handleReviewAction}
                       onBack={() => setScreen('dashboard')}
                       aiThinking={aiThinking}
-                      activeActionId={activeAction?.id}
                       isReviewOpen={screen === 'review' || screen === 'result'}
                     />
-                  </div>
+                  </motion.div>
                 )}
               </AnimatePresence>
 
-              {/* Review & Result Modals with layoutId="action-review-shell" */}
+              {/* Review & Result Modals with layoutId */}
               <AnimatePresence>
                 {screen === 'review' && activeAction && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+                  <motion.div
+                    key="review-modal-overlay"
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
+                  >
                     <Review
                       action={activeAction}
                       onConfirm={handleConfirm}
                       onCancel={() => setScreen('chat')}
                     />
-                  </div>
+                  </motion.div>
                 )}
 
                 {screen === 'result' && activeAction && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+                  <motion.div
+                    key="result-modal-overlay"
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
+                  >
                     <TxResult
                       action={activeAction}
                       onDone={backToDashboard}
+                      onBackToChat={() => setScreen('chat')}
                       onRetry={handleConfirm}
                     />
-                  </div>
+                  </motion.div>
                 )}
               </AnimatePresence>
             </>

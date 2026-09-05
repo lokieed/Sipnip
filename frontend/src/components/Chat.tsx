@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, Send, Sparkles } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import type { ChatMessage } from '../types';
+import type { ChatMessage, ProposedAction } from '../types';
 import { Badge, Button, GEOMETRIC_SPRING } from './ui';
 
 export function Chat({
@@ -10,7 +10,6 @@ export function Chat({
   onReviewAction,
   onBack,
   aiThinking,
-  activeActionId,
   isReviewOpen = false,
 }: {
   messages: ChatMessage[];
@@ -18,7 +17,6 @@ export function Chat({
   onReviewAction: (actionId: string) => void;
   onBack: () => void;
   aiThinking: boolean;
-  activeActionId?: string;
   isReviewOpen?: boolean;
 }) {
   const [input, setInput] = useState('');
@@ -138,13 +136,8 @@ export function Chat({
                 {msg.action && (
                   <div className="pl-8 sm:pl-8.5 w-full">
                     <ActionCard
-                      actionId={msg.action.id}
-                      summary={msg.action.summary}
-                      recipient={msg.action.recipient}
-                      amount={msg.action.amount}
-                      purpose={msg.action.purpose}
+                      action={msg.action}
                       onReview={() => onReviewAction(msg.action!.id)}
-                      isReviewing={isReviewOpen && activeActionId === msg.action.id}
                     />
                   </div>
                 )}
@@ -210,62 +203,77 @@ export function Chat({
 }
 
 function ActionCard({
-  summary,
-  recipient,
-  amount,
-  purpose,
+  action,
   onReview,
-  isReviewing = false,
 }: {
-  actionId?: string;
-  summary: string;
-  recipient?: string;
-  amount?: number;
-  purpose?: string;
+  action: ProposedAction;
   onReview: () => void;
-  isReviewing?: boolean;
 }) {
-  if (isReviewing) {
-    return (
-      <div className="h-[185px] w-full rounded-2xl border-2 border-dashed border-[var(--color-sui)]/30 opacity-40 bg-[var(--color-surface)]/20" />
-    );
-  }
+  const isCompleted = action.status === 'success';
 
   return (
     <motion.div
-      layoutId="action-review-shell"
+      layoutId={`action-shell-${action.id}`}
       layout
       transition={GEOMETRIC_SPRING}
-      className="p-4 w-full border-2 border-[var(--color-sui)]/60 hover:border-[var(--color-sui)] rounded-2xl shadow-[0_0_24px_rgba(77,162,255,0.18)] bg-[var(--color-surface)] overflow-hidden cursor-pointer select-none"
-      onClick={onReview}
+      className={`p-4 w-full border-2 rounded-2xl overflow-hidden select-none transition-colors ${
+        isCompleted
+          ? 'border-emerald-500/35 bg-[var(--color-surface)] shadow-none cursor-default'
+          : 'border-[var(--color-sui)]/60 hover:border-[var(--color-sui)] rounded-2xl shadow-[0_0_24px_rgba(77,162,255,0.18)] bg-[var(--color-surface)] cursor-pointer'
+      }`}
+      onClick={isCompleted ? undefined : onReview}
     >
       <div className="flex items-center justify-between mb-2.5">
-        <Badge tone="sui">Proposed Action</Badge>
+        <Badge tone={isCompleted ? 'success' : 'sui'}>
+          {isCompleted ? 'Transaction Completed' : 'Proposed Action'}
+        </Badge>
+        {isCompleted && action.txDigest && (
+          <a
+            href={`https://suiscan.xyz/testnet/tx/${action.txDigest}`}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="text-[11px] text-[var(--color-sui)] font-mono hover:underline flex items-center gap-1"
+          >
+            Suiscan ↗
+          </a>
+        )}
       </div>
-      <div className="text-xs sm:text-sm font-medium mb-3 leading-snug">{summary}</div>
+      <div className="text-xs sm:text-sm font-medium mb-3 leading-snug">{action.summary}</div>
       <div className="flex flex-col gap-1.5 text-xs text-[var(--color-text-secondary)] mb-3.5 bg-[var(--color-surface-2)]/40 p-2.5 rounded-xl border border-[var(--color-border)]/40">
-        {recipient && (
+        {action.recipient && (
           <div className="flex justify-between items-center">
             <span>Recipient</span>
-            <span className="text-[var(--color-text-primary)] font-medium truncate max-w-[180px]">{recipient}</span>
+            <span className="text-[var(--color-text-primary)] font-medium truncate max-w-[180px]">{action.recipient}</span>
           </div>
         )}
-        {amount !== undefined && (
+        {action.amount !== undefined && (
           <div className="flex justify-between items-center">
             <span>Amount</span>
-            <span className="text-[var(--color-text-primary)] font-mono font-semibold">{amount} SUI</span>
+            <span className="text-[var(--color-text-primary)] font-mono font-semibold">{action.amount} SUI</span>
           </div>
         )}
-        {purpose && (
+        {action.purpose && (
           <div className="flex justify-between items-center">
             <span>Purpose</span>
-            <span className="text-[var(--color-text-primary)] truncate max-w-[180px]">{purpose}</span>
+            <span className="text-[var(--color-text-primary)] truncate max-w-[180px]">{action.purpose}</span>
           </div>
         )}
       </div>
-      <Button fullWidth onClick={onReview}>
-        Review Transaction
-      </Button>
+      {isCompleted ? (
+        <button
+          disabled
+          type="button"
+          className="w-full inline-flex items-center justify-center gap-2 font-medium text-xs sm:text-sm rounded-[var(--radius-md)] px-4 py-2.5 bg-white/5 text-[var(--color-text-tertiary)] border border-white/10 cursor-not-allowed select-none opacity-60"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)] inline-block" />
+          <span>Completed & Sent</span>
+        </button>
+      ) : (
+        <Button fullWidth onClick={onReview}>
+          Review Transaction
+        </Button>
+      )}
     </motion.div>
   );
 }

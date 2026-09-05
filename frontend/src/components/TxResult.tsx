@@ -7,14 +7,16 @@ export function TxResult({
   action,
   onDone,
   onRetry,
+  onBackToChat,
 }: {
   action: ProposedAction;
   onDone: () => void;
   onRetry: () => void;
+  onBackToChat?: () => void;
 }) {
   return (
     <motion.div
-      layoutId="action-review-shell"
+      layoutId={`action-shell-${action.id}`}
       layout
       transition={GEOMETRIC_SPRING}
       className="w-full max-w-md bg-[var(--color-surface)] border-2 border-[var(--color-sui)]/60 rounded-2xl p-6 shadow-[0_0_32px_rgba(77,162,255,0.25)] overflow-hidden pointer-events-auto select-none"
@@ -110,6 +112,11 @@ export function TxResult({
             <Button fullWidth variant={action.txDigest ? 'secondary' : 'primary'} onClick={onDone}>
               Back to Dashboard
             </Button>
+            {onBackToChat && (
+              <Button fullWidth variant="ghost" onClick={onBackToChat}>
+                Back to Chat
+              </Button>
+            )}
           </div>
         </div>
       )}
