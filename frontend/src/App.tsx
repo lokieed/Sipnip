@@ -381,20 +381,18 @@ export default function App() {
   // ---- Render with fluid geometric morph transitions ----
   return (
     <>
-      <LayoutGroup id="sipnip-geometric-morph">
+      <LayoutGroup>
         <div className="w-full min-h-screen relative overflow-x-hidden bg-[var(--color-bg)]">
           {screen === 'landing' ? (
             <Landing onConnect={connectWallet} connecting={connecting} />
           ) : (
             <>
-              {/* Persistent Dashboard Base Layer */}
+              {/* Persistent Dashboard Base Layer (Pure opacity, zero transform/filter distortions) */}
               <motion.div
                 animate={{
-                  opacity: screen === 'dashboard' ? 1 : 0.4,
-                  scale: screen === 'dashboard' ? 1 : 0.985,
-                  filter: screen === 'dashboard' ? 'blur(0px)' : 'blur(4px)',
+                  opacity: screen === 'dashboard' ? 1 : 0.35,
                 }}
-                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.22 }}
                 className="w-full min-h-screen"
                 style={{ pointerEvents: screen === 'dashboard' ? 'auto' : 'none' }}
               >
@@ -441,6 +439,7 @@ export default function App() {
                       onReviewAction={handleReviewAction}
                       onBack={() => setScreen('dashboard')}
                       aiThinking={aiThinking}
+                      activeActionId={activeAction?.id}
                       isReviewOpen={screen === 'review' || screen === 'result'}
                     />
                   </motion.div>

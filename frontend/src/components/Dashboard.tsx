@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { LogOut, MessageSquare, RefreshCw, Wallet } from 'lucide-react';
 import type { ActivityItem, WalletState } from '../types';
 import { Badge, Button, Card, GEOMETRIC_SPRING, StatusDot } from './ui';
@@ -73,7 +73,7 @@ export function Dashboard({
         </div>
       </div>
 
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
+      <div className="w-full">
         {/* Balance card — 100% Real Live Sui Balance */}
         <Card className="p-6 mb-4">
           <div className="flex items-center justify-between mb-1">
@@ -106,23 +106,26 @@ export function Dashboard({
         {/* AI agent status — morphs into Chat window */}
         <div className="relative mb-6">
           <div className="h-[68px] w-full rounded-2xl border-2 border-dashed border-white/10 opacity-30 pointer-events-none" />
-          {!isChatOpen && (
-            <motion.div
-              layoutId="chat-morph-shell"
-              layout
-              transition={GEOMETRIC_SPRING}
-              className="absolute inset-0 h-full p-4 flex items-center justify-between cursor-pointer border-2 border-white/20 hover:border-white/40 rounded-2xl shadow-lg bg-[var(--color-surface)] overflow-hidden select-none"
-              onClick={onOpenChat}
-            >
-              <div className="flex items-center gap-2.5">
-                <StatusDot tone="success" />
-                <span className="text-sm font-medium text-[var(--color-text-secondary)]">AI agent ready</span>
-              </div>
-              <Button variant="secondary" onClick={onOpenChat} icon={<MessageSquare size={14} />}>
-                Ask AI
-              </Button>
-            </motion.div>
-          )}
+          <AnimatePresence>
+            {!isChatOpen && (
+              <motion.div
+                key="dashboard-ai-card"
+                layoutId="chat-morph-shell"
+                layout
+                transition={GEOMETRIC_SPRING}
+                className="absolute inset-0 h-full p-4 flex items-center justify-between cursor-pointer border-2 border-white/20 hover:border-white/40 rounded-2xl shadow-lg bg-[var(--color-surface)] overflow-hidden select-none"
+                onClick={onOpenChat}
+              >
+                <div className="flex items-center gap-2.5">
+                  <StatusDot tone="success" />
+                  <span className="text-sm font-medium text-[var(--color-text-secondary)]">AI agent ready</span>
+                </div>
+                <Button variant="secondary" onClick={onOpenChat} icon={<MessageSquare size={14} />}>
+                  Ask AI
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Activity */}
@@ -171,7 +174,7 @@ export function Dashboard({
             </Card>
           ))}
         </div>
-      </motion.div>
+      </div>
 
       {/* Floating chat entry for mobile ergonomics */}
       <button

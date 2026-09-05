@@ -10,6 +10,7 @@ export function Chat({
   onReviewAction,
   onBack,
   aiThinking,
+  activeActionId,
   isReviewOpen = false,
 }: {
   messages: ChatMessage[];
@@ -17,6 +18,7 @@ export function Chat({
   onReviewAction: (actionId: string) => void;
   onBack: () => void;
   aiThinking: boolean;
+  activeActionId?: string;
   isReviewOpen?: boolean;
 }) {
   const [input, setInput] = useState('');
@@ -49,8 +51,6 @@ export function Chat({
       <motion.div
         animate={{
           opacity: isReviewOpen ? 0.35 : 1,
-          filter: isReviewOpen ? 'blur(2px)' : 'blur(0px)',
-          scale: isReviewOpen ? 0.985 : 1,
         }}
         transition={{ duration: 0.22 }}
         className="flex-1 flex flex-col min-h-0 w-full"
@@ -135,10 +135,23 @@ export function Chat({
 
                 {msg.action && (
                   <div className="pl-8 sm:pl-8.5 w-full">
-                    <ActionCard
-                      action={msg.action}
-                      onReview={() => onReviewAction(msg.action!.id)}
-                    />
+                    <AnimatePresence mode="popLayout">
+                      {isReviewOpen && activeActionId === msg.action.id ? (
+                        <motion.div
+                          key={`action-placeholder-${msg.action.id}`}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="h-[185px] w-full rounded-2xl border-2 border-dashed border-[var(--color-sui)]/30 opacity-40 bg-[var(--color-surface)]/20"
+                        />
+                      ) : (
+                        <ActionCard
+                          key={`action-card-${msg.action.id}`}
+                          action={msg.action}
+                          onReview={() => onReviewAction(msg.action!.id)}
+                        />
+                      )}
+                    </AnimatePresence>
                   </div>
                 )}
               </div>
