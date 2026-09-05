@@ -134,22 +134,18 @@ export function Chat({
                 </div>
 
                 {msg.action && (
-                  <div className="pl-8 sm:pl-8.5 w-full">
-                    <AnimatePresence mode="popLayout">
-                      {isReviewOpen && activeActionId === msg.action.id ? (
-                        <motion.div
-                          key={`action-placeholder-${msg.action.id}`}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          className="h-[185px] w-full rounded-2xl border-2 border-dashed border-[var(--color-sui)]/30 opacity-40 bg-[var(--color-surface)]/20"
-                        />
-                      ) : (
-                        <ActionCard
-                          key={`action-card-${msg.action.id}`}
-                          action={msg.action}
-                          onReview={() => onReviewAction(msg.action!.id)}
-                        />
+                  <div className="pl-8 sm:pl-8.5 w-full relative">
+                    {/* Fixed placeholder so scroll position and message height never shift */}
+                    <div className="h-[185px] w-full rounded-2xl border-2 border-dashed border-[var(--color-sui)]/20 opacity-30 bg-[var(--color-surface)]/20 pointer-events-none" />
+                    <AnimatePresence>
+                      {(!isReviewOpen || activeActionId !== msg.action.id) && (
+                        <div className="absolute inset-0">
+                          <ActionCard
+                            key={`action-card-${msg.action.id}`}
+                            action={msg.action}
+                            onReview={() => onReviewAction(msg.action!.id)}
+                          />
+                        </div>
                       )}
                     </AnimatePresence>
                   </div>
@@ -227,10 +223,7 @@ function ActionCard({
   return (
     <motion.div
       layoutId={`action-shell-${action.id}`}
-      layout="position"
-      initial={{ opacity: 0, scale: 0.96 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.96 }}
+      layout
       transition={GEOMETRIC_SPRING}
       className={`p-4 w-full border-2 rounded-2xl overflow-hidden select-none transition-colors ${
         isCompleted
@@ -239,57 +232,59 @@ function ActionCard({
       }`}
       onClick={isCompleted ? undefined : onReview}
     >
-      <div className="flex items-center justify-between mb-2.5">
-        <Badge tone={isCompleted ? 'success' : 'sui'}>
-          {isCompleted ? 'Transaction Completed' : 'Proposed Action'}
-        </Badge>
-        {isCompleted && action.txDigest && (
-          <a
-            href={`https://suiscan.xyz/testnet/tx/${action.txDigest}`}
-            target="_blank"
-            rel="noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="text-[11px] text-[var(--color-sui)] font-mono hover:underline flex items-center gap-1"
+      <motion.div layout="position" className="w-full">
+        <div className="flex items-center justify-between mb-2.5">
+          <Badge tone={isCompleted ? 'success' : 'sui'}>
+            {isCompleted ? 'Transaction Completed' : 'Proposed Action'}
+          </Badge>
+          {isCompleted && action.txDigest && (
+            <a
+              href={`https://suiscan.xyz/testnet/tx/${action.txDigest}`}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="text-[11px] text-[var(--color-sui)] font-mono hover:underline flex items-center gap-1"
+            >
+              Suiscan ↗
+            </a>
+          )}
+        </div>
+        <div className="text-xs sm:text-sm font-medium mb-3 leading-snug">{action.summary}</div>
+        <div className="flex flex-col gap-1.5 text-xs text-[var(--color-text-secondary)] mb-3.5 bg-[var(--color-surface-2)]/40 p-2.5 rounded-xl border border-[var(--color-border)]/40">
+          {action.recipient && (
+            <div className="flex justify-between items-center">
+              <span>Recipient</span>
+              <span className="text-[var(--color-text-primary)] font-medium truncate max-w-[180px]">{action.recipient}</span>
+            </div>
+          )}
+          {action.amount !== undefined && (
+            <div className="flex justify-between items-center">
+              <span>Amount</span>
+              <span className="text-[var(--color-text-primary)] font-mono font-semibold">{action.amount} SUI</span>
+            </div>
+          )}
+          {action.purpose && (
+            <div className="flex justify-between items-center">
+              <span>Purpose</span>
+              <span className="text-[var(--color-text-primary)] truncate max-w-[180px]">{action.purpose}</span>
+            </div>
+          )}
+        </div>
+        {isCompleted ? (
+          <button
+            disabled
+            type="button"
+            className="w-full inline-flex items-center justify-center gap-2 font-medium text-xs sm:text-sm rounded-[var(--radius-md)] px-4 py-2.5 bg-white/5 text-[var(--color-text-tertiary)] border border-white/10 cursor-not-allowed select-none opacity-60"
           >
-            Suiscan ↗
-          </a>
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)] inline-block" />
+            <span>Completed & Sent</span>
+          </button>
+        ) : (
+          <Button fullWidth onClick={onReview}>
+            Review Transaction
+          </Button>
         )}
-      </div>
-      <div className="text-xs sm:text-sm font-medium mb-3 leading-snug">{action.summary}</div>
-      <div className="flex flex-col gap-1.5 text-xs text-[var(--color-text-secondary)] mb-3.5 bg-[var(--color-surface-2)]/40 p-2.5 rounded-xl border border-[var(--color-border)]/40">
-        {action.recipient && (
-          <div className="flex justify-between items-center">
-            <span>Recipient</span>
-            <span className="text-[var(--color-text-primary)] font-medium truncate max-w-[180px]">{action.recipient}</span>
-          </div>
-        )}
-        {action.amount !== undefined && (
-          <div className="flex justify-between items-center">
-            <span>Amount</span>
-            <span className="text-[var(--color-text-primary)] font-mono font-semibold">{action.amount} SUI</span>
-          </div>
-        )}
-        {action.purpose && (
-          <div className="flex justify-between items-center">
-            <span>Purpose</span>
-            <span className="text-[var(--color-text-primary)] truncate max-w-[180px]">{action.purpose}</span>
-          </div>
-        )}
-      </div>
-      {isCompleted ? (
-        <button
-          disabled
-          type="button"
-          className="w-full inline-flex items-center justify-center gap-2 font-medium text-xs sm:text-sm rounded-[var(--radius-md)] px-4 py-2.5 bg-white/5 text-[var(--color-text-tertiary)] border border-white/10 cursor-not-allowed select-none opacity-60"
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)] inline-block" />
-          <span>Completed & Sent</span>
-        </button>
-      ) : (
-        <Button fullWidth onClick={onReview}>
-          Review Transaction
-        </Button>
-      )}
+      </motion.div>
     </motion.div>
   );
 }
