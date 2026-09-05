@@ -385,62 +385,64 @@ export default function App() {
                   onConnectWallet={connectWallet}
                   walletName={activeWalletName}
                   balanceLoading={balanceLoading}
+                  isChatOpen={screen !== 'dashboard'}
                 />
               </motion.div>
 
-              {/* Direct Geometric Morph Overlays */}
+              {/* Backdrops - independently fading, never wrapping the morphing objects */}
               <AnimatePresence>
-                {screen === 'chat' && (
+                {screen !== 'dashboard' && (
                   <motion.div
-                    key="chat-overlay"
+                    key="chat-backdrop"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.18 }}
-                    className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm"
-                  >
+                    transition={{ duration: 0.22 }}
+                    className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm pointer-events-auto"
+                    onClick={() => {
+                      if (screen === 'chat') setScreen('dashboard');
+                    }}
+                  />
+                )}
+              </AnimatePresence>
+
+              {/* Chat Window Morph Overlay */}
+              <AnimatePresence>
+                {(screen === 'chat' || screen === 'review' || screen === 'result') && (
+                  <div className="fixed inset-0 z-40 flex items-center justify-center p-2 sm:p-4 pointer-events-none">
                     <Chat
                       messages={messages}
                       onSend={handleSend}
                       onReviewAction={handleReviewAction}
                       onBack={() => setScreen('dashboard')}
                       aiThinking={aiThinking}
+                      activeActionId={activeAction?.id}
+                      isReviewOpen={screen === 'review' || screen === 'result'}
                     />
-                  </motion.div>
+                  </div>
                 )}
+              </AnimatePresence>
 
+              {/* Review & Result Modals with layoutId="action-review-shell" */}
+              <AnimatePresence>
                 {screen === 'review' && activeAction && (
-                  <motion.div
-                    key="review-overlay"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.18 }}
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-                  >
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
                     <Review
                       action={activeAction}
                       onConfirm={handleConfirm}
                       onCancel={() => setScreen('chat')}
                     />
-                  </motion.div>
+                  </div>
                 )}
 
                 {screen === 'result' && activeAction && (
-                  <motion.div
-                    key="result-overlay"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.18 }}
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-                  >
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
                     <TxResult
                       action={activeAction}
                       onDone={backToDashboard}
                       onRetry={handleConfirm}
                     />
-                  </motion.div>
+                  </div>
                 )}
               </AnimatePresence>
             </>

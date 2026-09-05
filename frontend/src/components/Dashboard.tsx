@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { LogOut, MessageSquare, RefreshCw, Wallet } from 'lucide-react';
 import type { ActivityItem, WalletState } from '../types';
-import { Badge, Button, Card, StatusDot } from './ui';
+import { Badge, Button, Card, GEOMETRIC_SPRING, StatusDot } from './ui';
 
 export function Dashboard({
   wallet,
@@ -11,6 +11,7 @@ export function Dashboard({
   onDisconnect,
   onConnectWallet,
   walletName,
+  isChatOpen = false,
   balanceLoading = false,
 }: {
   wallet: WalletState;
@@ -20,6 +21,7 @@ export function Dashboard({
   onDisconnect?: () => void;
   onConnectWallet?: () => void;
   walletName?: string;
+  isChatOpen?: boolean;
   balanceLoading?: boolean;
 }) {
   const isConnected = wallet.connected && !!wallet.address;
@@ -102,19 +104,26 @@ export function Dashboard({
         </Card>
 
         {/* AI agent status — morphs into Chat window */}
-        <Card
-          layoutId="chat-morph-shell"
-          className="p-4 mb-6 flex items-center justify-between cursor-pointer hover:border-[var(--color-border-hover)] transition-all"
-          onClick={onOpenChat}
-        >
-          <div className="flex items-center gap-2.5">
-            <StatusDot tone="success" />
-            <span className="text-sm text-[var(--color-text-secondary)]">AI agent ready</span>
-          </div>
-          <Button variant="secondary" onClick={onOpenChat} icon={<MessageSquare size={14} />}>
-            Ask AI
-          </Button>
-        </Card>
+        <div className="relative mb-6">
+          <div className="h-[68px] w-full rounded-2xl border-2 border-dashed border-white/10 opacity-30 pointer-events-none" />
+          {!isChatOpen && (
+            <motion.div
+              layoutId="chat-morph-shell"
+              layout
+              transition={GEOMETRIC_SPRING}
+              className="absolute inset-0 h-full p-4 flex items-center justify-between cursor-pointer border-2 border-white/20 hover:border-white/40 rounded-2xl shadow-lg bg-[var(--color-surface)] overflow-hidden select-none"
+              onClick={onOpenChat}
+            >
+              <div className="flex items-center gap-2.5">
+                <StatusDot tone="success" />
+                <span className="text-sm font-medium text-[var(--color-text-secondary)]">AI agent ready</span>
+              </div>
+              <Button variant="secondary" onClick={onOpenChat} icon={<MessageSquare size={14} />}>
+                Ask AI
+              </Button>
+            </motion.div>
+          )}
+        </div>
 
         {/* Activity */}
         <div className="flex items-center justify-between mb-3">

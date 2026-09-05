@@ -7,8 +7,8 @@ import type { ReactNode } from 'react';
 // ============================================================
 export const GEOMETRIC_SPRING = {
   type: 'spring' as const,
-  stiffness: 400,
-  damping: 38,
+  stiffness: 240,
+  damping: 26,
   mass: 1,
 };
 

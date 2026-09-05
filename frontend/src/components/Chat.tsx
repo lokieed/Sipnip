@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, Send, Sparkles } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { ChatMessage } from '../types';
-import { Badge, Button, Card, GEOMETRIC_SPRING } from './ui';
+import { Badge, Button, GEOMETRIC_SPRING } from './ui';
 
 export function Chat({
   messages,
@@ -10,12 +10,16 @@ export function Chat({
   onReviewAction,
   onBack,
   aiThinking,
+  activeActionId,
+  isReviewOpen = false,
 }: {
   messages: ChatMessage[];
   onSend: (text: string) => void;
   onReviewAction: (actionId: string) => void;
   onBack: () => void;
   aiThinking: boolean;
+  activeActionId?: string;
+  isReviewOpen?: boolean;
 }) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -42,10 +46,20 @@ export function Chat({
       layoutId="chat-morph-shell"
       layout
       transition={GEOMETRIC_SPRING}
-      className="h-[100dvh] sm:h-[88vh] sm:max-h-[850px] flex flex-col max-w-2xl mx-auto w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-none sm:rounded-[var(--radius-lg)] overflow-hidden shadow-2xl relative"
+      className="h-[100dvh] sm:h-[86vh] sm:max-h-[820px] flex flex-col max-w-2xl mx-auto w-full bg-[var(--color-surface)] border-2 border-white/20 rounded-2xl overflow-hidden shadow-2xl relative pointer-events-auto"
     >
-      {/* Sticky Header with responsive padding and blur */}
-      <header className="sticky top-0 z-10 flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[var(--color-border)] backdrop-blur-md bg-[var(--color-surface)]/90 transition-colors">
+      <motion.div
+        animate={{
+          opacity: isReviewOpen ? 0.35 : 1,
+          filter: isReviewOpen ? 'blur(2px)' : 'blur(0px)',
+          scale: isReviewOpen ? 0.985 : 1,
+        }}
+        transition={{ duration: 0.22 }}
+        className="flex-1 flex flex-col min-h-0 w-full"
+        style={{ pointerEvents: isReviewOpen ? 'none' : 'auto' }}
+      >
+        {/* Sticky Header with responsive padding and blur */}
+        <header className="sticky top-0 z-10 flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[var(--color-border)] backdrop-blur-md bg-[var(--color-surface)]/90">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -59,66 +73,78 @@ export function Chat({
           <div>
             <div className="text-xs sm:text-sm font-medium flex items-center gap-1.5">
               <span>AI Agent</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-sui)] animate-pulse" />
             </div>
-            <div className="text-[11px] sm:text-xs text-[var(--color-text-tertiary)] truncate">
-              Sui transaction assistant
+            <div className="text-[10px] text-[var(--color-text-tertiary)] flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)] inline-block" />
+              <span>Sui Testnet</span>
             </div>
           </div>
         </div>
+
+        <div className="flex items-center gap-2">
+          <Badge tone="ai">
+            <span className="flex items-center gap-1">
+              <Sparkles size={11} /> Gemini 3.5
+            </span>
+          </Badge>
+        </div>
       </header>
 
-      {/* Messages Scroll Area with responsive fluid spacing */}
-      <main className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col gap-3.5 sm:gap-4 scroll-smooth">
+      {/* Scrollable Message Stream with generous top/bottom padding */}
+      <main className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 sm:py-6 space-y-5">
         {messages.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, ease: 'easeOut' }}
-            className="flex-1 flex flex-col items-center justify-center text-center px-4 py-12"
-          >
-            <div className="w-10 h-10 rounded-xl bg-[var(--color-ai-dim)] border border-[var(--color-ai)]/20 flex items-center justify-center mb-3.5 shadow-sm">
-              <Sparkles size={18} className="text-[var(--color-ai)]" />
+          <div className="flex flex-col items-center justify-center h-full min-h-[320px] text-center text-[var(--color-text-tertiary)] max-w-sm mx-auto px-4">
+            <div className="w-11 h-11 rounded-2xl bg-[var(--color-surface-2)] flex items-center justify-center mb-3 text-[var(--color-ai)] border border-[var(--color-border)]">
+              <Sparkles size={20} />
             </div>
-            <div className="text-sm font-medium mb-1">What would you like to do?</div>
-            <div className="text-xs text-[var(--color-text-tertiary)] max-w-xs">
-              Try: <span className="text-[var(--color-text-secondary)]">"Send 5 SUI to Ahmad for design work"</span> or <span className="text-[var(--color-text-secondary)]">"Swap 20 SUI to USDC"</span>
+            <div className="text-sm font-medium text-[var(--color-text-primary)] mb-1">How can I help you today?</div>
+            <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed mb-4">
+              Ask to send SUI to contacts, query wallet balances, or create testnet escrows in plain English.
+            </p>
+            <div className="flex flex-wrap gap-1.5 justify-center">
+              <button
+                onClick={() => onSend('Send 1 SUI to Nathan for frontend work')}
+                className="text-[11px] bg-[var(--color-surface-2)] hover:bg-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-white px-2.5 py-1 rounded-full border border-[var(--color-border)] transition-colors text-left"
+              >
+                "Send 1 SUI to Nathan"
+              </button>
             </div>
-          </motion.div>
+          </div>
         )}
 
         {messages.map((msg) => (
           <motion.div
             key={msg.id}
-            layout
-            initial={{ opacity: 0, y: 8, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
-            className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className={`flex flex-col gap-2 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
           >
             {msg.role === 'user' ? (
-              <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)]/60 text-[var(--color-text-primary)] rounded-[var(--radius-md)] rounded-br-xs px-3.5 sm:px-4 py-2 sm:py-2.5 max-w-[85%] sm:max-w-[78%] text-xs sm:text-sm shadow-xs break-words">
+              <div className="max-w-[85%] sm:max-w-[80%] rounded-[var(--radius-lg)] rounded-tr-xs bg-white text-[#0A0B0F] px-4 py-2.5 text-xs sm:text-sm font-medium shadow-sm leading-relaxed select-text">
                 {msg.text}
               </div>
             ) : (
-              <div className="flex flex-col gap-2.5 sm:gap-3 max-w-[90%] sm:max-w-[85%]">
+              <div className="flex flex-col gap-2.5 max-w-[92%] sm:max-w-[85%]">
                 <div className="flex items-start gap-2.5">
-                  <div className="w-6 h-6 rounded-md bg-[var(--color-ai-dim)] border border-[var(--color-ai)]/25 flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                    <Sparkles size={13} className="text-[var(--color-ai)]" />
+                  <div className="w-6 h-6 rounded-lg bg-[var(--color-surface-2)] border border-[var(--color-border)] flex items-center justify-center shrink-0 mt-0.5 text-[var(--color-ai)] shadow-xs">
+                    <Sparkles size={12} />
                   </div>
-                  <div className="text-xs sm:text-sm text-[var(--color-text-primary)] pt-0.5 leading-relaxed">
+                  <div className="rounded-[var(--radius-lg)] rounded-tl-xs bg-[var(--color-surface-2)] border border-[var(--color-border)] px-4 py-2.5 text-xs sm:text-sm text-[var(--color-text-primary)] leading-relaxed select-text whitespace-pre-line">
                     {msg.text}
                   </div>
                 </div>
 
                 {msg.action && (
-                  <div className="pl-8 sm:pl-8.5">
+                  <div className="pl-8 sm:pl-8.5 w-full">
                     <ActionCard
+                      actionId={msg.action.id}
                       summary={msg.action.summary}
                       recipient={msg.action.recipient}
                       amount={msg.action.amount}
                       purpose={msg.action.purpose}
                       onReview={() => onReviewAction(msg.action!.id)}
+                      isReviewing={isReviewOpen && activeActionId === msg.action.id}
                     />
                   </div>
                 )}
@@ -151,7 +177,7 @@ export function Chat({
       </main>
 
       {/* Sticky Bottom Input Area with safe-area support */}
-      <footer className="sticky bottom-0 z-10 px-4 sm:px-6 py-3 sm:py-3.5 border-t border-[var(--color-border)] backdrop-blur-md bg-[var(--color-bg)]/85 pb-[max(0.875rem,env(safe-area-inset-bottom))] transition-colors">
+      <footer className="sticky bottom-0 z-10 px-4 sm:px-6 py-3 sm:py-3.5 border-t border-[var(--color-border)] backdrop-blur-md bg-[var(--color-surface)]/90 pb-[max(0.875rem,env(safe-area-inset-bottom))] transition-colors">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -161,12 +187,12 @@ export function Chat({
         >
           <input
             ref={inputRef}
+            type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={aiThinking ? 'Thinking...' : 'Ask Sipnip to transfer, escrow, or swap...'}
+            placeholder="Type your request in plain English..."
             disabled={aiThinking}
-            aria-label="Message to AI agent"
-            className="flex-1 bg-transparent text-xs sm:text-sm outline-none placeholder:text-[var(--color-text-tertiary)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex-1 bg-transparent text-xs sm:text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] outline-none min-w-0"
           />
           <button
             type="submit"
@@ -178,6 +204,7 @@ export function Chat({
           </button>
         </form>
       </footer>
+      </motion.div>
     </motion.div>
   );
 }
@@ -188,20 +215,35 @@ function ActionCard({
   amount,
   purpose,
   onReview,
+  isReviewing = false,
 }: {
+  actionId?: string;
   summary: string;
   recipient?: string;
   amount?: number;
   purpose?: string;
   onReview: () => void;
+  isReviewing?: boolean;
 }) {
+  if (isReviewing) {
+    return (
+      <div className="h-[185px] w-full rounded-2xl border-2 border-dashed border-[var(--color-sui)]/30 opacity-40 bg-[var(--color-surface)]/20" />
+    );
+  }
+
   return (
-    <Card layoutId="action-review-card" className="p-3.5 sm:p-4 w-full transition-all" glow="ai">
+    <motion.div
+      layoutId="action-review-shell"
+      layout
+      transition={GEOMETRIC_SPRING}
+      className="p-4 w-full border-2 border-[var(--color-sui)]/60 hover:border-[var(--color-sui)] rounded-2xl shadow-[0_0_24px_rgba(77,162,255,0.18)] bg-[var(--color-surface)] overflow-hidden cursor-pointer select-none"
+      onClick={onReview}
+    >
       <div className="flex items-center justify-between mb-2.5">
-        <Badge tone="ai">Proposed Action</Badge>
+        <Badge tone="sui">Proposed Action</Badge>
       </div>
       <div className="text-xs sm:text-sm font-medium mb-3 leading-snug">{summary}</div>
-      <div className="flex flex-col gap-1.5 text-xs text-[var(--color-text-secondary)] mb-3.5 bg-[var(--color-surface-2)]/40 p-2.5 rounded-md border border-[var(--color-border)]/40">
+      <div className="flex flex-col gap-1.5 text-xs text-[var(--color-text-secondary)] mb-3.5 bg-[var(--color-surface-2)]/40 p-2.5 rounded-xl border border-[var(--color-border)]/40">
         {recipient && (
           <div className="flex justify-between items-center">
             <span>Recipient</span>
@@ -224,7 +266,7 @@ function ActionCard({
       <Button fullWidth onClick={onReview}>
         Review Transaction
       </Button>
-    </Card>
+    </motion.div>
   );
 }
 
