@@ -98,8 +98,18 @@ export async function fetchRecentTransactions(
                   effects {
                     status
                     timestamp
+                    gasEffects {
+                      gasSummary {
+                        computationCost
+                        storageCost
+                        storageRebate
+                      }
+                    }
                     balanceChanges {
                       nodes {
+                        owner {
+                          address
+                        }
                         coinType {
                           repr
                         }
@@ -125,19 +135,55 @@ export async function fetchRecentTransactions(
           const effects = tx.effects || {};
           const status = effects.status === 'SUCCESS' ? 'success' : 'error';
           
-          // Calculate net SUI balance change
+          // Calculate gas fee in MIST
+          const gasSummary = effects.gasEffects?.gasSummary;
+          const gasCostMist = gasSummary
+            ? (Number(gasSummary.computationCost || 0) + Number(gasSummary.storageCost || 0) - Number(gasSummary.storageRebate || 0))
+            : 0;
+
+          // Separate user's balance change from recipient's balance change
           const changes = effects.balanceChanges?.nodes || [];
-          let netSui = 0;
+          let userSuiChangeMist = 0;
+          let recipientReceivedMist = 0;
+
           for (const ch of changes) {
             if (ch.coinType?.repr?.endsWith('::sui::SUI')) {
-              netSui += Number(ch.amount || 0) / 1_000_000_000;
+              const ownerAddr = ch.owner?.address?.toLowerCase();
+              const mist = Number(ch.amount || 0);
+              if (ownerAddr === address.toLowerCase()) {
+                userSuiChangeMist += mist;
+              } else if (mist > 0) {
+                recipientReceivedMist += mist;
+              }
             }
           }
 
           let summary = isSender ? 'Sent / Executed on Sui' : 'Received on Sui';
-          if (Math.abs(netSui) > 0.0001) {
-            const absAmount = Math.abs(netSui).toFixed(4).replace(/\.?0+$/, '');
-            summary = netSui < 0 ? `Sent ${absAmount} SUI` : `Received ${absAmount} SUI`;
+
+          if (isSender) {
+            // Direct transfer to another address
+            if (recipientReceivedMist > 0) {
+              const sentSui = recipientReceivedMist / 1_000_000_000;
+              const formatted = sentSui < 0.0001 ? sentSui.toFixed(6) : sentSui.toFixed(4).replace(/\.?0+$/, '');
+              summary = `Sent ${formatted} SUI`;
+            } else {
+              // Contract execution / escrow / gas: subtract gas to get principal amount
+              const netWithoutGasMist = Math.abs(userSuiChangeMist) > gasCostMist
+                ? Math.abs(userSuiChangeMist) - gasCostMist
+                : Math.abs(userSuiChangeMist);
+              const sentSui = netWithoutGasMist / 1_000_000_000;
+              if (sentSui > 0.000001) {
+                const formatted = sentSui < 0.0001 ? sentSui.toFixed(6) : sentSui.toFixed(4).replace(/\.?0+$/, '');
+                summary = `Sent ${formatted} SUI`;
+              }
+            }
+          } else {
+            // Received SUI as recipient
+            if (userSuiChangeMist > 0) {
+              const recSui = userSuiChangeMist / 1_000_000_000;
+              const formatted = recSui < 0.0001 ? recSui.toFixed(6) : recSui.toFixed(4).replace(/\.?0+$/, '');
+              summary = `Received ${formatted} SUI`;
+            }
           }
 
           // Format timestamp into human-readable relative or short date
