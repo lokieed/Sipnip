@@ -245,10 +245,13 @@ export function Dashboard({
                                   <ArrowUpRight size={13} />
                                 )}
                               </div>
-                              <div className="min-w-0">
-                                <div className="text-xs font-medium text-white truncate">{item.summary}</div>
-                                <div className="text-[10px] text-[var(--color-text-tertiary)] font-mono">{item.timestamp}</div>
-                              </div>
+                                <div className="min-w-0">
+                                  <div className="text-xs font-medium text-white truncate">{item.summary}</div>
+                                  <div className="text-[10px] text-[var(--color-text-tertiary)] font-mono flex items-center gap-1.5">
+                                    <span>{item.timestamp}</span>
+                                    {item.netDelta && <span>• Net: {item.netDelta}</span>}
+                                  </div>
+                                </div>
                             </div>
                             <Badge tone={item.status === 'success' ? 'success' : item.status === 'error' ? 'danger' : 'neutral'}>
                               {item.status}

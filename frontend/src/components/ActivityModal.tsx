@@ -196,6 +196,22 @@ export function ActivityModal({
                     </div>
                     <div className="text-xs text-[var(--color-text-tertiary)] mt-0.5 flex flex-wrap items-center gap-2 font-mono">
                       <span>{item.timestamp}</span>
+                      {item.netDelta && (
+                        <>
+                          <span>•</span>
+                          <span title="Net balance deducted from or credited to your wallet on-chain (matches Suiscan)">
+                            Net: <span className="text-white/90 font-medium">{item.netDelta}</span>
+                          </span>
+                        </>
+                      )}
+                      {item.gasFee && (
+                        <>
+                          <span>•</span>
+                          <span title="Gas fee paid for this transaction">
+                            Gas: <span className="text-white/70">{item.gasFee}</span>
+                          </span>
+                        </>
+                      )}
                       {item.txDigest && (
                         <>
                           <span>•</span>

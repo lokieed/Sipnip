@@ -203,12 +203,32 @@ export async function fetchRecentTransactions(
             else timestampStr = date.toLocaleDateString();
           }
 
+          // Exact net balance delta on user's address (matches Suiscan's Activity Details)
+          const netSui = userSuiChangeMist / 1_000_000_000;
+          const absNet = Math.abs(netSui);
+          let formattedNet = '';
+          if (absNet > 0.000001) {
+            formattedNet = absNet < 0.0001
+              ? absNet.toFixed(6)
+              : absNet < 0.01
+              ? absNet.toFixed(3)
+              : absNet.toFixed(4).replace(/\.?0+$/, '');
+          }
+          const netDelta = formattedNet
+            ? (netSui < 0 ? `-${formattedNet} SUI` : `+${formattedNet} SUI`)
+            : undefined;
+
+          const gasSui = gasCostMist / 1_000_000_000;
+          const gasFee = gasSui > 0 ? `${gasSui.toFixed(4).replace(/\.?0+$/, '')} SUI` : undefined;
+
           return {
             id: tx.digest || `onchain-tx-${idx}`,
             summary,
             status,
             timestamp: timestampStr,
             txDigest: tx.digest,
+            netDelta,
+            gasFee,
           };
         });
       }

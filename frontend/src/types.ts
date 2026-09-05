@@ -50,4 +50,6 @@ export interface ActivityItem {
   status: ActionStatus;
   timestamp: string;
   txDigest?: string;
+  netDelta?: string;
+  gasFee?: string;
 }
