@@ -10,7 +10,13 @@ import {
   useSignAndExecuteTransaction,
 } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
-import { REAL_WALLET_ADDRESS, executeActionOnSui, fetchWalletBalance, parseIntentWithAI } from './api';
+import {
+  REAL_WALLET_ADDRESS,
+  executeActionOnSui,
+  fetchRecentTransactions,
+  fetchWalletBalance,
+  parseIntentWithAI,
+} from './api';
 import { Chat } from './components/Chat';
 import { Dashboard } from './components/Dashboard';
 import { Landing } from './components/Landing';
@@ -59,6 +65,7 @@ export default function App() {
   const [activeAction, setActiveAction] = useState<ProposedAction | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [balanceLoading, setBalanceLoading] = useState(false);
+  const [activityLoading, setActivityLoading] = useState(false);
 
   // Sync messages
   useEffect(() => {
@@ -83,14 +90,17 @@ export default function App() {
       localStorage.setItem('sipnip_connected', 'true');
       setScreen((prev) => (prev === 'landing' ? 'dashboard' : prev));
       loadRealBalance(true, currentAccount.address);
+      loadRealActivity(currentAccount.address);
     }
   }, [currentAccount?.address]);
 
-  // Initial balance load if not yet populated
+  // Initial balance & on-chain activity load
   useEffect(() => {
+    const targetAddr = currentAccount?.address || wallet.address;
+    loadRealActivity(targetAddr);
     const saved = localStorage.getItem('sipnip_balance');
     if (!saved) {
-      loadRealBalance(true, currentAccount?.address || wallet.address);
+      loadRealBalance(true, targetAddr);
     }
   }, []);
 
@@ -160,6 +170,22 @@ export default function App() {
       console.error('Could not load real on-chain balance:', err);
     } finally {
       setBalanceLoading(false);
+    }
+  };
+
+  // ---- Fetch real on-chain transaction activity from Sui Testnet GraphQL RPC ----
+  const loadRealActivity = async (targetAddress?: string) => {
+    const addressToQuery = targetAddress || currentAccount?.address || wallet.address || REAL_WALLET_ADDRESS;
+    setActivityLoading(true);
+    try {
+      const onChainTxs = await fetchRecentTransactions(addressToQuery, 8);
+      if (onChainTxs.length > 0) {
+        setActivity(onChainTxs);
+      }
+    } catch (err) {
+      console.warn('Could not sync on-chain transactions:', err);
+    } finally {
+      setActivityLoading(false);
     }
   };
 
@@ -259,6 +285,7 @@ export default function App() {
 
         setTimeout(() => {
           loadRealBalance(true, currentAccount.address);
+          loadRealActivity(currentAccount.address);
         }, 2000);
       } catch (err: any) {
         console.error('Escrow execution error:', err);
@@ -354,9 +381,10 @@ export default function App() {
       const newSpent = currentSpent + amountSpent;
       localStorage.setItem('sipnip_spent', newSpent.toString());
 
-      // Refresh on-chain balance directly from Sui blockchain GraphQL
+      // Refresh on-chain balance and activity directly from Sui blockchain GraphQL
       setTimeout(() => {
         loadRealBalance(true, currentAccount.address);
+        loadRealActivity(currentAccount.address);
       }, 2000);
     } catch (err: any) {
       console.error('Execution error:', err);
@@ -401,6 +429,8 @@ export default function App() {
                   activity={activity}
                   onOpenChat={() => setScreen('chat')}
                   onRefreshBalance={() => loadRealBalance(true)}
+                  onRefreshActivity={() => loadRealActivity()}
+                  activityLoading={activityLoading}
                   onDisconnect={handleDisconnect}
                   onConnectWallet={connectWallet}
                   walletName={activeWalletName}

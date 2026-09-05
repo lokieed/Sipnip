@@ -13,16 +13,20 @@ export function Dashboard({
   walletName,
   isChatOpen = false,
   balanceLoading = false,
+  onRefreshActivity,
+  activityLoading = false,
 }: {
   wallet: WalletState;
   activity: ActivityItem[];
   onOpenChat: () => void;
   onRefreshBalance?: () => void;
+  onRefreshActivity?: () => void;
   onDisconnect?: () => void;
   onConnectWallet?: () => void;
   walletName?: string;
   isChatOpen?: boolean;
   balanceLoading?: boolean;
+  activityLoading?: boolean;
 }) {
   const isConnected = wallet.connected && !!wallet.address;
   const shortAddress = wallet.address
@@ -133,7 +137,20 @@ export function Dashboard({
 
         {/* Activity */}
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-medium text-[var(--color-text-secondary)]">Recent Activity</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-medium text-[var(--color-text-secondary)]">Recent Activity</h2>
+            {onRefreshActivity && (
+              <button
+                onClick={onRefreshActivity}
+                disabled={activityLoading}
+                title="Sync recent transactions from Sui Testnet"
+                className="text-[var(--color-text-tertiary)] hover:text-white transition-colors p-1 -m-1 rounded cursor-pointer"
+              >
+                <RefreshCw size={12} className={activityLoading ? 'animate-spin' : ''} />
+              </button>
+            )}
+          </div>
+          <span className="text-[11px] text-[var(--color-text-tertiary)]">Live on Sui</span>
         </div>
 
         <div className="flex flex-col gap-2">

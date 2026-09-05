@@ -74,6 +74,106 @@ export async function fetchWalletBalance(
   return res.json();
 }
 
+/**
+ * Fetches real on-chain transaction history directly from Sui Testnet GraphQL RPC.
+ */
+export async function fetchRecentTransactions(
+  address: string = REAL_WALLET_ADDRESS,
+  limit: number = 8
+): Promise<import('./types').ActivityItem[]> {
+  try {
+    const res = await fetch(SUI_GRAPHQL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `
+          query {
+            address(address: "${address}") {
+              transactions(last: ${limit}) {
+                nodes {
+                  digest
+                  sender {
+                    address
+                  }
+                  effects {
+                    status
+                    timestamp
+                    balanceChanges {
+                      nodes {
+                        coinType {
+                          repr
+                        }
+                        amount
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        `,
+      }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const nodes = data?.data?.address?.transactions?.nodes;
+      if (Array.isArray(nodes) && nodes.length > 0) {
+        // Reverse so most recent transaction is first
+        return nodes.slice().reverse().map((tx: any, idx: number) => {
+          const isSender = tx.sender?.address?.toLowerCase() === address.toLowerCase();
+          const effects = tx.effects || {};
+          const status = effects.status === 'SUCCESS' ? 'success' : 'error';
+          
+          // Calculate net SUI balance change
+          const changes = effects.balanceChanges?.nodes || [];
+          let netSui = 0;
+          for (const ch of changes) {
+            if (ch.coinType?.repr?.endsWith('::sui::SUI')) {
+              netSui += Number(ch.amount || 0) / 1_000_000_000;
+            }
+          }
+
+          let summary = isSender ? 'Sent / Executed on Sui' : 'Received on Sui';
+          if (Math.abs(netSui) > 0.0001) {
+            const absAmount = Math.abs(netSui).toFixed(4).replace(/\.?0+$/, '');
+            summary = netSui < 0 ? `Sent ${absAmount} SUI` : `Received ${absAmount} SUI`;
+          }
+
+          // Format timestamp into human-readable relative or short date
+          let timestampStr = 'Recent';
+          if (effects.timestamp) {
+            const date = new Date(effects.timestamp);
+            const now = new Date();
+            const diffMs = now.getTime() - date.getTime();
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
+
+            if (diffMins < 1) timestampStr = 'Just now';
+            else if (diffMins < 60) timestampStr = `${diffMins}m ago`;
+            else if (diffHours < 24) timestampStr = `${diffHours}h ago`;
+            else if (diffDays < 7) timestampStr = `${diffDays}d ago`;
+            else timestampStr = date.toLocaleDateString();
+          }
+
+          return {
+            id: tx.digest || `onchain-tx-${idx}`,
+            summary,
+            status,
+            timestamp: timestampStr,
+            txDigest: tx.digest,
+          };
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to fetch on-chain transactions from Sui GraphQL:', err);
+  }
+
+  return [];
+}
+
 export interface ExecutionResult {
   success: boolean;
   digest?: string;
