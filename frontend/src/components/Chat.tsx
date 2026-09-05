@@ -49,10 +49,12 @@ export function Chat({
       className="h-[100dvh] sm:h-[86vh] sm:max-h-[820px] flex flex-col max-w-2xl mx-auto w-full bg-[var(--color-surface)] border-2 border-white/20 rounded-2xl overflow-hidden shadow-2xl relative pointer-events-auto"
     >
       <motion.div
+        initial={{ opacity: 0 }}
         animate={{
           opacity: isReviewOpen ? 0.35 : 1,
         }}
-        transition={{ duration: 0.22 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.22, delay: 0.08 }}
         className="flex-1 flex flex-col min-h-0 w-full"
         style={{ pointerEvents: isReviewOpen ? 'none' : 'auto' }}
       >
@@ -227,7 +229,10 @@ function ActionCard({
   return (
     <motion.div
       layoutId={`action-shell-${action.id}`}
-      layout
+      layout="position"
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.96 }}
       transition={GEOMETRIC_SPRING}
       className={`p-4 w-full border-2 rounded-2xl overflow-hidden select-none transition-colors ${
         isCompleted
