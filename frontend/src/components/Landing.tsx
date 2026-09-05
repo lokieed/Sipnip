@@ -39,13 +39,34 @@ export function Landing({
           and it settles on Sui — instantly, and always with your confirmation.
         </p>
 
-        <Button
-          onClick={onConnect}
-          disabled={connecting}
-          icon={connecting ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
+        {/* Connect Wallet Card Container with Spring & Geometric Card Animation */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 16 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 240, damping: 24, delay: 0.1 }}
+          whileHover={{ scale: 1.015, borderColor: 'rgba(77, 162, 255, 0.4)' }}
+          className="w-full max-w-sm p-5 sm:p-6 rounded-2xl bg-[var(--color-surface)] border-2 border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.36)] flex flex-col items-center gap-4 transition-colors"
         >
-          {connecting ? 'Connecting...' : 'Connect Wallet to Start'}
-        </Button>
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--color-ai)]/20 to-[var(--color-sui)]/20 border border-white/10 flex items-center justify-center text-[var(--color-sui)]">
+            <Sparkles size={22} className="animate-pulse" />
+          </div>
+
+          <div className="text-center">
+            <h3 className="text-base font-semibold text-[var(--color-text-primary)]">Connect Sui Wallet</h3>
+            <p className="text-xs text-[var(--color-text-secondary)] mt-1">
+              Supports Slush Wallet and standard Sui extensions
+            </p>
+          </div>
+
+          <Button
+            fullWidth
+            onClick={onConnect}
+            disabled={connecting}
+            icon={connecting ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
+          >
+            {connecting ? 'Connecting...' : 'Connect Wallet to Start'}
+          </Button>
+        </motion.div>
 
         <div className="flex items-center gap-6 mt-10 text-xs text-[var(--color-text-tertiary)]">
           <div className="flex items-center gap-1.5">
