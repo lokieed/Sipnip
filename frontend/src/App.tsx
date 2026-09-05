@@ -356,33 +356,25 @@ export default function App() {
   const activeWalletName =
     currentWallet.currentWallet?.name || (currentAccount ? 'Slush' : undefined);
 
-  // ---- Render with fluid screen transitions ----
+  // ---- Render with fluid geometric morph transitions ----
   return (
     <>
       <LayoutGroup id="sipnip-geometric-morph">
         <div className="w-full min-h-screen relative overflow-x-hidden bg-[var(--color-bg)]">
-          <AnimatePresence initial={false}>
-            {screen === 'landing' && (
+          {screen === 'landing' ? (
+            <Landing onConnect={connectWallet} connecting={connecting} />
+          ) : (
+            <>
+              {/* Persistent Dashboard Base Layer */}
               <motion.div
-                key="landing"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.18 }}
+                animate={{
+                  opacity: screen === 'dashboard' ? 1 : 0.4,
+                  scale: screen === 'dashboard' ? 1 : 0.985,
+                  filter: screen === 'dashboard' ? 'blur(0px)' : 'blur(4px)',
+                }}
+                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
                 className="w-full min-h-screen"
-              >
-                <Landing onConnect={connectWallet} connecting={connecting} />
-              </motion.div>
-            )}
-
-            {screen === 'dashboard' && (
-              <motion.div
-                key="dashboard"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.18 }}
-                className="w-full min-h-screen"
+                style={{ pointerEvents: screen === 'dashboard' ? 'auto' : 'none' }}
               >
                 <Dashboard
                   wallet={wallet}
@@ -395,61 +387,64 @@ export default function App() {
                   balanceLoading={balanceLoading}
                 />
               </motion.div>
-            )}
 
-            {screen === 'chat' && (
-              <motion.div
-                key="chat"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.18 }}
-                className="w-full min-h-screen flex items-center justify-center sm:py-6 sm:px-4"
-              >
-                <Chat
-                  messages={messages}
-                  onSend={handleSend}
-                  onReviewAction={handleReviewAction}
-                  onBack={() => setScreen('dashboard')}
-                  aiThinking={aiThinking}
-                />
-              </motion.div>
-            )}
+              {/* Direct Geometric Morph Overlays */}
+              <AnimatePresence>
+                {screen === 'chat' && (
+                  <motion.div
+                    key="chat-overlay"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.18 }}
+                    className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm"
+                  >
+                    <Chat
+                      messages={messages}
+                      onSend={handleSend}
+                      onReviewAction={handleReviewAction}
+                      onBack={() => setScreen('dashboard')}
+                      aiThinking={aiThinking}
+                    />
+                  </motion.div>
+                )}
 
-            {screen === 'review' && activeAction && (
-              <motion.div
-                key="review"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.18 }}
-                className="w-full min-h-screen flex items-center justify-center p-4"
-              >
-                <Review
-                  action={activeAction}
-                  onConfirm={handleConfirm}
-                  onCancel={() => setScreen('chat')}
-                />
-              </motion.div>
-            )}
+                {screen === 'review' && activeAction && (
+                  <motion.div
+                    key="review-overlay"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.18 }}
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+                  >
+                    <Review
+                      action={activeAction}
+                      onConfirm={handleConfirm}
+                      onCancel={() => setScreen('chat')}
+                    />
+                  </motion.div>
+                )}
 
-            {screen === 'result' && activeAction && (
-              <motion.div
-                key="result"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.18 }}
-                className="w-full min-h-screen flex items-center justify-center p-4"
-              >
-                <TxResult
-                  action={activeAction}
-                  onDone={backToDashboard}
-                  onRetry={handleConfirm}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+                {screen === 'result' && activeAction && (
+                  <motion.div
+                    key="result-overlay"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.18 }}
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+                  >
+                    <TxResult
+                      action={activeAction}
+                      onDone={backToDashboard}
+                      onRetry={handleConfirm}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
+          )}
         </div>
       </LayoutGroup>
 

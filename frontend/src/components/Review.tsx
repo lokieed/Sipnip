@@ -12,7 +12,7 @@ export function Review({
   onCancel: () => void;
 }) {
   return (
-    <div className="min-h-screen flex flex-col justify-center max-w-md mx-auto px-6 py-8 w-full">
+    <div className="w-full max-w-md mx-auto flex flex-col justify-center">
       <button
         onClick={onCancel}
         className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] hover:text-white mb-6 self-start transition-colors"
