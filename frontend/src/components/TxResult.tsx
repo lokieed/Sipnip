@@ -38,8 +38,8 @@ export function TxResult({
           <div className="text-xs font-mono text-[var(--color-text-tertiary)] bg-[var(--color-surface-2)]/60 p-2.5 rounded-xl border border-[var(--color-border)]/50 mb-5 w-full">
             {action.amount} SUI → {action.recipient}
           </div>
-          <Button fullWidth variant="ghost" onClick={onDone}>
-            Cancel / Back to Dashboard
+          <Button fullWidth variant="ghost" onClick={onBackToChat || onDone}>
+            Cancel / Back to Chat
           </Button>
         </div>
       )}
@@ -110,12 +110,12 @@ export function TxResult({
                 View Transaction on Suiscan ↗
               </Button>
             )}
-            <Button fullWidth variant={action.txDigest ? 'secondary' : 'primary'} onClick={onDone}>
-              Back to Dashboard
+            <Button fullWidth variant={action.txDigest ? 'secondary' : 'primary'} onClick={onBackToChat || onDone}>
+              Back to Chat
             </Button>
-            {onBackToChat && (
-              <Button fullWidth variant="ghost" onClick={onBackToChat}>
-                Back to Chat
+            {onDone && (
+              <Button fullWidth variant="ghost" onClick={onDone}>
+                Back to Dashboard
               </Button>
             )}
           </div>
@@ -136,7 +136,9 @@ export function TxResult({
           </div>
           <div className="flex flex-col gap-2 w-full">
             <Button fullWidth onClick={onRetry}>Try Again</Button>
-            <Button fullWidth variant="ghost" onClick={onDone}>Back to Dashboard</Button>
+            <Button fullWidth variant="ghost" onClick={onBackToChat || onDone}>
+              Back to Chat
+            </Button>
           </div>
         </div>
       )}
