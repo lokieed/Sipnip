@@ -110,25 +110,20 @@ export function Dashboard({
             {!isChatOpen && (
               <motion.div
                 key="dashboard-ai-card"
-                layoutId="chat-morph-shell"
-                layout
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.96 }}
                 transition={GEOMETRIC_SPRING}
                 className="absolute inset-0 h-full p-4 flex items-center justify-between cursor-pointer border-2 border-white/20 hover:border-white/40 rounded-2xl shadow-lg bg-[var(--color-surface)] overflow-hidden select-none"
                 onClick={onOpenChat}
               >
-                <motion.div
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.12 }}
-                  className="flex items-center justify-between w-full"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <StatusDot tone="success" />
-                    <span className="text-sm font-medium text-[var(--color-text-secondary)]">AI agent ready</span>
-                  </div>
-                  <Button variant="secondary" onClick={onOpenChat} icon={<MessageSquare size={14} />}>
-                    Ask AI
-                  </Button>
-                </motion.div>
+                <div className="flex items-center gap-2.5">
+                  <StatusDot tone="success" />
+                  <span className="text-sm font-medium text-[var(--color-text-secondary)]">AI agent ready</span>
+                </div>
+                <Button variant="secondary" onClick={onOpenChat} icon={<MessageSquare size={14} />}>
+                  Ask AI
+                </Button>
               </motion.div>
             )}
           </AnimatePresence>

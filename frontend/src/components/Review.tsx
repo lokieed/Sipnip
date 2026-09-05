@@ -14,9 +14,11 @@ export function Review({
 }) {
   return (
     <motion.div
-      layoutId={`action-shell-${action.id}`}
-      layout
+      initial={{ opacity: 0, scale: 0.92, y: 12 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.92, y: 12 }}
       transition={GEOMETRIC_SPRING}
+      style={{ transformOrigin: '50% 50%' }}
       className="w-full max-w-md bg-[var(--color-surface)] border-2 border-[var(--color-sui)]/60 rounded-2xl p-6 shadow-[0_0_32px_rgba(77,162,255,0.25)] overflow-hidden pointer-events-auto select-none"
     >
       {/* Header with Back and Shield */}

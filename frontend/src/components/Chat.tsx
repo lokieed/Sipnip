@@ -43,20 +43,19 @@ export function Chat({
 
   return (
     <motion.div
-      layoutId="chat-morph-shell"
-      layout
+      initial={{ opacity: 0, scale: 0.92, y: 14 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.92, y: 14 }}
       transition={GEOMETRIC_SPRING}
+      style={{ transformOrigin: '50% 25%' }}
       className="h-[100dvh] sm:h-[86vh] sm:max-h-[820px] flex flex-col max-w-2xl mx-auto w-full bg-[var(--color-surface)] border-2 border-white/20 rounded-2xl overflow-hidden shadow-2xl relative pointer-events-auto"
     >
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{
+      <div
+        className="flex-1 flex flex-col min-h-0 w-full transition-opacity duration-200"
+        style={{
           opacity: isReviewOpen ? 0.35 : 1,
+          pointerEvents: isReviewOpen ? 'none' : 'auto',
         }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.22, delay: 0.08 }}
-        className="flex-1 flex flex-col min-h-0 w-full"
-        style={{ pointerEvents: isReviewOpen ? 'none' : 'auto' }}
       >
         {/* Sticky Header with responsive padding and blur */}
         <header className="sticky top-0 z-10 flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[var(--color-border)] backdrop-blur-md bg-[var(--color-surface)]/90">
@@ -212,7 +211,7 @@ export function Chat({
           </button>
         </form>
       </footer>
-      </motion.div>
+      </div>
     </motion.div>
   );
 }
