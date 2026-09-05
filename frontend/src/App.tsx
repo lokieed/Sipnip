@@ -429,10 +429,7 @@ export default function App() {
               {/* Chat Window Morph Overlay */}
               <AnimatePresence>
                 {(screen === 'chat' || screen === 'review' || screen === 'result') && (
-                  <motion.div
-                    key="chat-morph-overlay"
-                    className="fixed inset-0 z-40 flex items-center justify-center p-2 sm:p-4 pointer-events-none"
-                  >
+                  <div className="fixed inset-0 z-40 flex items-center justify-center p-2 sm:p-4 pointer-events-none">
                     <Chat
                       messages={messages}
                       onSend={handleSend}
@@ -442,37 +439,31 @@ export default function App() {
                       activeActionId={activeAction?.id}
                       isReviewOpen={screen === 'review' || screen === 'result'}
                     />
-                  </motion.div>
+                  </div>
                 )}
               </AnimatePresence>
 
               {/* Review & Result Modals with layoutId */}
               <AnimatePresence>
                 {screen === 'review' && activeAction && (
-                  <motion.div
-                    key="review-modal-overlay"
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
-                  >
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
                     <Review
                       action={activeAction}
                       onConfirm={handleConfirm}
                       onCancel={() => setScreen('chat')}
                     />
-                  </motion.div>
+                  </div>
                 )}
 
                 {screen === 'result' && activeAction && (
-                  <motion.div
-                    key="result-modal-overlay"
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
-                  >
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
                     <TxResult
                       action={activeAction}
                       onDone={backToDashboard}
                       onBackToChat={() => setScreen('chat')}
                       onRetry={handleConfirm}
                     />
-                  </motion.div>
+                  </div>
                 )}
               </AnimatePresence>
             </>

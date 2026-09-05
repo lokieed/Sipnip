@@ -16,12 +16,12 @@ export function TxResult({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.94 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.94 }}
+      layoutId={`action-shell-${action.id}`}
+      layout
       transition={GEOMETRIC_SPRING}
       className="w-full max-w-md bg-[var(--color-surface)] border-2 border-[var(--color-sui)]/60 rounded-2xl p-6 shadow-[0_0_32px_rgba(77,162,255,0.25)] overflow-hidden pointer-events-auto select-none"
     >
+      <motion.div layout="position" className="w-full">
       {action.status === 'processing' && (
         <div className="flex flex-col items-center text-center">
           <motion.div
@@ -140,6 +140,7 @@ export function TxResult({
           </div>
         </div>
       )}
+      </motion.div>
     </motion.div>
   );
 }

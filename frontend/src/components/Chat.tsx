@@ -43,14 +43,13 @@ export function Chat({
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.92, y: 14 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.92, y: 14 }}
+      layoutId="chat-morph-shell"
+      layout
       transition={GEOMETRIC_SPRING}
-      style={{ transformOrigin: '50% 25%' }}
       className="h-[100dvh] sm:h-[86vh] sm:max-h-[820px] flex flex-col max-w-2xl mx-auto w-full bg-[var(--color-surface)] border-2 border-white/20 rounded-2xl overflow-hidden shadow-2xl relative pointer-events-auto"
     >
-      <div
+      <motion.div
+        layout="position"
         className="flex-1 flex flex-col min-h-0 w-full transition-opacity duration-200"
         style={{
           opacity: isReviewOpen ? 0.35 : 1,
@@ -211,7 +210,7 @@ export function Chat({
           </button>
         </form>
       </footer>
-      </div>
+      </motion.div>
     </motion.div>
   );
 }
